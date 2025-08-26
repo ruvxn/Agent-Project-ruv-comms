@@ -1,4 +1,4 @@
-from smolagents import CodeAgent, LiteLLMModel
+from smolagents import CodeAgent, LiteLLMModel, DuckDuckGoSearchTool
 import os
 
 
@@ -10,7 +10,16 @@ model1 = LiteLLMModel(
     model_id='ollama/gpt-oss',
     api_key='"http://localhost:11434"'
 )
-agent = CodeAgent(tools=[], model=model1)
+agent = CodeAgent(tools=[DuckDuckGoSearchTool()], model=model)
 
-result = agent.run("calculate the sum of numbers from 1 to 10")
-print(result)
+print("Hello there enter your question")
+
+
+
+while True:
+    user_input = input()
+    if user_input:
+        result = agent.run(user_input)
+        user_input = ""
+        print(result)
+
