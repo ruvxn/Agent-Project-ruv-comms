@@ -3,6 +3,17 @@ from langgraph.store.sqlite import SqliteStore
 from langgraph.store.memory import InMemoryStore
 import sqlite3
 from langmem import create_manage_memory_tool, create_search_memory_tool
+from transformers import pipeline
+
+
+def sentiment_analysis():
+    sentiment_pipeline = pipeline("sentiment-analysis")
+    data = ["I love you", "I hate you"]
+    sentiment_pipeline(data)
+
+
+
+
 def get_weather(city: str) -> str:
     """Get Weather for a given city"""
     return f"Its always sunny {city}!"
@@ -15,6 +26,8 @@ store = SqliteStore(
     }
 )
 
+sentiment_analysis()
+"""
 agent = create_react_agent(
     model="gpt-4o-mini",
     tools=[
@@ -35,6 +48,8 @@ while True:
         )
         user_input = ""
         print(f'Agent: {reply["messages"][-1].content}')
+"""
+
 
 
 
