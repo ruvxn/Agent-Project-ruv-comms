@@ -2,7 +2,7 @@ import json
 from langchain_core.messages import ToolMessage
 
 class BasicToolNode:
-    """A node that runs the tools requested*"""
+    """A node that runs the tools requested* jira link"""
     def __init__(self, tools: list) -> None:
         self.tools_by_name = {tool.name: tool for tool in tools}
 
