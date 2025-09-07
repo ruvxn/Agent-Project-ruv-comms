@@ -9,6 +9,7 @@ from typing_extensions import override
 
 
 class TestTool(BaseTool):
+    """Tool class that inherits from base tool"""
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
         self.description = "A test tool"

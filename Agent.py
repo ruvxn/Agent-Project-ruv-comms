@@ -8,6 +8,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
 class Agent:
+    """An Agent class"""
     def __init__(self):
         self.llm = init_chat_model("openai:gpt-4o-mini")
         #self.tool = TestTool()
