@@ -1,8 +1,10 @@
-import datetime
+from dataclasses import asdict
 import os
 import uuid
-from dotenv import load_dotenv
 import mysql.connector
+from dotenv import load_dotenv
+from Model.DTO.JSONResponseDTO import JSONResponseDTO
+from Model.DTO.RawReviewDTO import RawReviewDTO
 
 load_dotenv()
 
@@ -44,10 +46,11 @@ def db_wrapper(function):
             result = function(cursor, db_connection, *args, **kwargs)
             db_connection.commit()
             print(f"{function.__name__} successful")
-            return result
+            return JSONResponseDTO(success=True, data=result, message=f"{function.__name__} successful")
         except Exception as e:
             db_connection.rollback()
             print(f"{function.__name__} failed. {e}")
+            return JSONResponseDTO(success=False, message=f"{function.__name__} failed.", error=str(e))
         finally:
             cursor.close()
             db_connection.close()
@@ -65,26 +68,53 @@ def create_or_get_review_table(cursor, db_connection) -> None:
         cursor.execute(f"""
             CREATE TABLE `{MYSQL_RAW_REVIEW_TABLE}` (
                 id CHAR(36) NOT NULL PRIMARY KEY,
-                user_id INT,
+                user_id CHAR(36),
+                purchase_id CHAR(36),
                 review_title TEXT,
                 review_body TEXT,
-                create_time_stamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                create_time_stamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                insert_time_stamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """)
+    return result
 
 
 @db_wrapper
 def insert_into_raw_review_table(cursor, db_connection, review_title: str, review_body: str):
     id = str(uuid.uuid4())
-    create_time_stamp = datetime.datetime.now()
 
     insert_query = f"""INSERT INTO `{MYSQL_RAW_REVIEW_TABLE}`
-        (id, review_title, review_body, create_time_stamp)
-        VALUES (%s, %s, %s, %s)
+        (id, user_id, purchase_id, review_title, review_body)
+        VALUES (%s, %s, %s, %s,%s)
     """
 
-    cursor.execute(insert_query, (id, review_title,
-                   review_body, create_time_stamp))
+    cursor.execute(insert_query, (id, None, None, review_title,
+                   review_body))
+
+
+@db_wrapper
+def get_raw_review_data_by_id(cursor, db_connection, id: str) -> dict:
+
+    cursor.execute(
+        f"""SELECT id, user_id, purchase_id, review_title, review_body,
+           create_time_stamp, insert_time_stamp FROM `{MYSQL_RAW_REVIEW_TABLE}` WHERE id = %s""", (id,))
+
+    raw_review_data = cursor.fetchone()
+
+    if not raw_review_data:
+        return None
+
+    raw_review_data_response = RawReviewDTO(
+        id=raw_review_data[0],
+        user_id=raw_review_data[1],
+        purchase_id=raw_review_data[2],
+        review_title=raw_review_data[3],
+        review_body=raw_review_data[4],
+        create_time_stamp=raw_review_data[5],
+        insert_time_stamp=raw_review_data[6]
+    )
+
+    return asdict(raw_review_data_response)
 
 # TODO - get_user_table()
 

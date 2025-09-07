@@ -1,6 +1,6 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from backend.db_setup.mysql_setup import *
+from Controller.db_setup.mysql_setup import *
 
 
 def load_data_to_raw_review_table() -> None:
@@ -8,7 +8,7 @@ def load_data_to_raw_review_table() -> None:
     create_or_get_mysql_cursor()
     create_or_get_review_table()
 
-    with open("./data/small_test.txt", "r", encoding="utf-8") as f:
+    with open("./Model/data/small_test.txt", "r", encoding="utf-8") as f:
         lines = f.read().split("\n")
 
     for line in lines:
