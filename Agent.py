@@ -1,21 +1,21 @@
 from AgentState import State
 from langgraph.graph import StateGraph, START, END
 from tool import TestTool
-from Tools import BasicToolNode
-import os
 from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.checkpoint.sqlite import SqliteSaver
-import sqlite3
+from langgraph.prebuilt import ToolNode
+
+
 class Agent:
     """An Agent class"""
     def __init__(self):
         self.llm = init_chat_model("openai:gpt-4o-mini")
-        #self.tool = TestTool()
-        #self.tools = [self.tool]
-        #self.llm_with_tool  = self.llm.bind_tools(self.tool)
+        self.tool = TestTool()
+        self.tools = [self.tool]
+        self.llm_with_tools  = self.llm.bind_tools(self.tools)
     def chat(self, state: State):
-        return {"messages":[self.llm.invoke(state["messages"])]}
+        return {"messages":[self.llm_with_tools.invoke(state["messages"])]}
+
     def route_tools(self, state: State):
         if isinstance(state, list):
             ai_message = state[-1]
@@ -26,23 +26,21 @@ class Agent:
         if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
             return "tools"
         return END
-
     def graph_builder(self):
         graph_builder = StateGraph(State)
         graph_builder.add_node("chatbot", self.chat)
-        graph_builder.add_edge(START, "chatbot")
-        graph_builder.add_edge("chatbot", END)
 
-        #tool_node = BasicToolNode(tools=[self.tools])
-        #graph_builder.add_node("tools", tool_node)
-        """graph_builder.add_conditional_edges(
+        tool_node = ToolNode(tools=[self.tool])
+        graph_builder.add_node("tools", tool_node)
+
+        graph_builder.add_conditional_edges(
             "chatbot",
             self.route_tools,
-            {"tools": "tools", END: END},
-            )"""
-        #graph_builder.add_edge("tools", "chatbot")
-        #graph_builder.add_edge(START, "chatbot")
-        #conn = sqlite3.connect("test.sqlite")
+            {"tools": "tools", "__end__": END},
+        )
+        graph_builder.add_edge("tools", "chatbot")
+        graph_builder.add_edge(START, "chatbot")
+
         memory = InMemorySaver()
-        graph = graph_builder.compile(memory)
+        graph = graph_builder.compile(checkpointer=memory)
         return graph

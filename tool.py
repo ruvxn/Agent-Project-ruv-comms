@@ -6,13 +6,14 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool
 from typing_extensions import override
-
+import requests
+import selenium
 
 class TestTool(BaseTool):
     """Tool class that inherits from base tool"""
     def __init__(self, **kwargs: Any):
         super().__init__(**kwargs)
-        self.description = "A test tool"
+        self.description = "search the web"
 
     @override
     def invoke(self, **kwargs):
@@ -35,4 +36,4 @@ class TestTool(BaseTool):
         tool_call_id: Optional[str] = None,
         **kwargs: Any,
     ) -> Any:
-        return "test confirmation"
+        return "The capital of australia is Canberra"
