@@ -1,6 +1,6 @@
 from AgentState import State
 from langgraph.graph import StateGraph, START, END
-from tool import TestTool
+from tool import WebSearch
 from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import ToolNode
@@ -10,7 +10,7 @@ class Agent:
     """An Agent class"""
     def __init__(self):
         self.llm = init_chat_model("openai:gpt-4o-mini")
-        self.tool = TestTool()
+        self.tool = WebSearch()
         self.tools = [self.tool]
         self.llm_with_tools  = self.llm.bind_tools(self.tools)
     def chat(self, state: State):
