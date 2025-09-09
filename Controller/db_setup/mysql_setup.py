@@ -1,3 +1,4 @@
+from ast import List
 from dataclasses import asdict
 import os
 import uuid
@@ -5,6 +6,7 @@ import mysql.connector
 from dotenv import load_dotenv
 from Model.DTO.JSONResponseDTO import JSONResponseDTO
 from Model.DTO.RawReviewDTO import RawReviewDTO
+from Model.DTO.ReviewSummaryDTO import ReviewSummaryDTO
 
 load_dotenv()
 
@@ -45,11 +47,11 @@ def db_wrapper(function):
         try:
             result = function(cursor, db_connection, *args, **kwargs)
             db_connection.commit()
-            print(f"{function.__name__} successful")
+            # print(f"{function.__name__} successful")
             return JSONResponseDTO(success=True, data=result, message=f"{function.__name__} successful")
         except Exception as e:
             db_connection.rollback()
-            print(f"{function.__name__} failed. {e}")
+            # print(f"{function.__name__} failed. {e}")
             return JSONResponseDTO(success=False, message=f"{function.__name__} failed.", error=str(e))
         finally:
             cursor.close()
@@ -115,6 +117,69 @@ def get_raw_review_data_by_id(cursor, db_connection, id: str) -> dict:
     )
 
     return asdict(raw_review_data_response)
+
+
+@db_wrapper
+def get_all_raw_review_data(cursor, db_connection) -> dict:
+    cursor.execute(f"""SELECT * FROM `{MYSQL_RAW_REVIEW_TABLE}`""")
+    raw_review_data = cursor.fetchall()
+
+    if not raw_review_data:
+        return None
+
+    all_raw_review_data = []
+
+    for entry in raw_review_data:
+        all_raw_review_data.append(asdict(RawReviewDTO(id=entry[0],
+                                                       user_id=entry[1],
+                                                       purchase_id=entry[2],
+                                                       review_title=entry[3],
+                                                       review_body=entry[4],
+                                                       create_time_stamp=entry[5],
+                                                       insert_time_stamp=entry[6])))
+    return all_raw_review_data
+
+
+@db_wrapper
+def get_clean_review_from_table(cursor, db_connection):
+    all_raw_review_data = get_all_raw_review_data()
+
+    review_list = []
+
+    for entry in all_raw_review_data.data:
+        review_list.append(asdict(ReviewSummaryDTO(
+            review=f"review_title: {entry['review_title']}; review_body: {entry['review_body']}",
+            review_id=entry['id']
+        )))
+    return review_list
+
+
+def load_data_to_raw_review_table() -> None:
+    """Load raw user comments from text file and insert into DB"""
+    create_or_get_mysql_cursor()
+    create_or_get_review_table()
+
+    with open("./Model/data/small_test.txt", "r", encoding="utf-8") as f:
+        lines = f.read().split("\n")
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        line = line.replace("__label__2", "")
+        line = line.replace("__label__1", "")
+        if ":" in line:
+            review_title, review_body = line.split(":", 1)
+        else:
+            review_title, review_body = "", line
+
+        try:
+            insert_into_raw_review_table(
+                review_title.strip(), review_body.strip())
+        except Exception as e:
+            print(
+                f"review_title: {review_title} and review_body {review_body} insert unsuccessfully. {e}")
+
 
 # TODO - get_user_table()
 
