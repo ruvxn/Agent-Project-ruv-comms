@@ -1,30 +1,29 @@
-from click import prompt
-
 from AgentState import State
 from langgraph.graph import StateGraph, START, END
-from tool import WebSearch, WebScrape
 from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import ToolNode
-from langgraph.store.memory import InMemoryStore
-from langmem import create_search_memory_tool, create_manage_memory_tool
+from typing_extensions import List, Any
 
 class Agent:
     """An Agent class"""
-    def __init__(self):
+    def __init__(self, tools: List[Any]):
+        """init method for class Agent requires tools as a list of tools"""
         self.llm = init_chat_model("openai:gpt-4o-mini")
-        self.tool_search = WebSearch()
-        self.tool_scrape = WebScrape()
-        self.memory_search = create_search_memory_tool(namespace="memories")
-        self.memory_manage = create_manage_memory_tool(namespace="memories")
-        self.tools = [self.tool_search, self.tool_scrape, self.memory_search, self.memory_manage]
+        self.config = {"configurable": {"thread_id": "1"}}
+        self.tools = tools
         self.llm_with_tools  = self.llm.bind_tools(self.tools)
-        self.store = InMemoryStore(
-            index={
-                "dims": 1536,
-                "embed": "openai:text-embedding-3-small",
-            }
-        )
+
+    def run(self, user_input: str):
+        """Method to run the agent/interact with the agent requires user input"""
+        graph = self.graph_builder
+        for event in graph.stream(
+                {"messages": [{"role": "user", "content": user_input}]},
+                config=self.config
+        ):
+            for value in event.values():
+                return value["messages"][-1].content
+                
     def chat(self, state: State):
         return {"messages":[self.llm_with_tools.invoke(state["messages"])]}
 
@@ -54,5 +53,5 @@ class Agent:
         graph_builder.add_edge(START, "chatbot")
 
         memory = InMemorySaver()
-        graph = graph_builder.compile(checkpointer=memory, store=self.store)
+        graph = graph_builder.compile(checkpointer=memory)
         return graph
