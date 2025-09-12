@@ -15,8 +15,8 @@ def main():
             agent_reply = web_agent.run(user_input=user_input)
             print('================================ Human Message =================================')
             print(agent_reply)
-        except:
-            print("An error occured")
+        except Exception as e:
+            print("An error occured {e}")
             break
 
 if __name__ == "__main__":

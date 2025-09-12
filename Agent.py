@@ -5,6 +5,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
 
+
 class Agent:
     """An Agent class"""
     def __init__(self, tools: List[Any]):
@@ -13,11 +14,12 @@ class Agent:
         self.config = {"configurable": {"thread_id": "1"}}
         self.tools = tools
         self.llm_with_tools  = self.llm.bind_tools(self.tools)
+        self.graph = self.graph_builder()
 
     def run(self, user_input: str):
         """Method to run the agent/interact with the agent requires user input"""
-        graph = self.graph_builder
-        for event in graph.stream(
+        
+        for event in self.graph.stream(
                 {"messages": [{"role": "user", "content": user_input}]},
                 config=self.config
         ):
@@ -41,7 +43,7 @@ class Agent:
         graph_builder = StateGraph(State)
         graph_builder.add_node("chatbot", self.chat)
 
-        tool_node = ToolNode(tools=[self.tool_search, self.tool_scrape, self.memory_search, self.memory_manage])
+        tool_node = ToolNode(tools=self.tools)
         graph_builder.add_node("tools", tool_node)
 
         graph_builder.add_conditional_edges(
