@@ -5,10 +5,10 @@ from dataclasses import dataclass
 class Meta:
     pdf_title: str
     page_number: int
-    chunk_count: int
+    chunk_summary: str
 
 
 @dataclass
 class PdfText:
-    chunk: list[str]
+    chunk: str
     meta: Meta

@@ -20,3 +20,5 @@ __pycache__/
 chroma_db/
 
 test.ft.txt
+
+.pdf
