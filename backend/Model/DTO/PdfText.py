@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Meta:
-    pdf_title: str
+    pdf_name: str
     page_number: int
     chunk_summary: str
 

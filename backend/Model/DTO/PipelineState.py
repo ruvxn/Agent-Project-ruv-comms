@@ -5,6 +5,7 @@ from backend.model.dto.PdfText import PdfText
 
 class PipelineState(BaseModel):
     pdf_path: str = ""
+    pdf_name: str = ""
     chunked_pdf_text: List[PdfText] = []
-    message: List[str] = []
+    message: list[str] = []
     final_summary: str = ""

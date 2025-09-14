@@ -25,13 +25,15 @@ def extract_pdf_to_chunk(state: PipelineState) -> dict:
         for single_chunk in chunk_page_text:
             chunk_summary = chunked_summary_pdf(single_chunk)
             meta = Meta(
-                pdf_title=PDF_NAME,
+                pdf_name=PDF_NAME,
                 page_number=page_num,
-                chunk_summary=chunk_summary)
-            pdf_text_list.append(PdfText(chunk=single_chunk, meta=meta))
+                chunk_summary=chunk_summary
+            )
+            pdf_text_list.append(
+                PdfText(chunk=single_chunk, meta=meta))
 
     state.chunked_pdf_text = pdf_text_list
-
+    state.pdf_name = PDF_NAME
     print(f"state.chunked_pdf_text:{state.chunked_pdf_text}")
 
     return state
