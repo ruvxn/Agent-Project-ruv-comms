@@ -12,11 +12,11 @@ def main():
             if user_input.lower() in ["quit", "exit", "q"]:
                 print("Goodbye!")
                 break
-            agent_reply = web_agent.run(user_input=user_input)
-            print('================================ Human Message =================================')
-            print(agent_reply)
+            result = web_agent.run(user_input=user_input)
+            print('================================ AI =================================')
+            print(result)
         except Exception as e:
-            print("An error occured {e}")
+            print(f"An error occured {e}")
             break
 
 if __name__ == "__main__":

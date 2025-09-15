@@ -14,18 +14,29 @@ class Agent:
         self.config = {"configurable": {"thread_id": "1"}}
         self.tools = tools
         self.llm_with_tools  = self.llm.bind_tools(self.tools)
+        self.memory = InMemorySaver()
         self.graph = self.graph_builder()
 
     def run(self, user_input: str):
         """Method to run the agent/interact with the agent requires user input"""
-        
+        #Shows the final message from the LLM
+        final_state = self.graph.invoke(
+            {"messages": [("user", user_input)]},
+            config=self.config
+        )
+
+        #
+        return final_state["messages"][-1].content
+        #Shows thinking
         for event in self.graph.stream(
                 {"messages": [{"role": "user", "content": user_input}]},
                 config=self.config
+
         ):
             for value in event.values():
                 return value["messages"][-1].content
-                
+                print("================================ Assistant =================================")
+                print(value["messages"][-1].content)
     def chat(self, state: State):
         return {"messages":[self.llm_with_tools.invoke(state["messages"])]}
 
