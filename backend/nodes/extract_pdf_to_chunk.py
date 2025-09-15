@@ -1,8 +1,7 @@
 from attr import asdict
-from backend.model.dto.PdfText import Meta, PdfText
-from backend.model.dto.PipelineState import PipelineState
+from backend.model.data_class.PdfText import Meta, PdfText
+from backend.model.data_class.PipelineState import PipelineState
 from backend.utils.utils import chunked_summary_pdf, chunking, clean_text
-from backend.utils.wrapper import node_log
 import fitz
 import os
 import dotenv
@@ -13,7 +12,6 @@ PDF_PATH = os.getenv("PDF_PATH")
 PDF_NAME = os.path.splitext(os.path.basename(PDF_PATH))[0]
 
 
-@node_log
 def extract_pdf_to_chunk(state: PipelineState) -> dict:
     pdf = fitz.open(state.pdf_path)
     pdf_text_list: list[PdfText] = []

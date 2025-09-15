@@ -5,7 +5,7 @@ import uuid
 from dotenv import load_dotenv
 from chromadb import Collection, PersistentClient
 from sentence_transformers import SentenceTransformer
-from backend.model.dto.PipelineState import PipelineState
+from backend.model.data_class.PipelineState import PipelineState
 
 load_dotenv()
 EMBED_MODEL = os.getenv("EMBED_MODEL")
@@ -22,7 +22,7 @@ def set_up_chroma_client(state: PipelineState):
             "description": f"pdf {state.pdf_name} chunks and summary",
             "created": str(datetime.now())
         })
-    state.message.append(f"collection {state.pdf_name} created or found")
+    state.logs.append(f"collection {state.pdf_name} created or found")
     return collection
 
 
@@ -35,7 +35,7 @@ def insert_into_chroma(state: PipelineState) -> PipelineState:
     )
 
     if exist_embeding["documents"] and exist_embeding["documents"][0]:
-        state.message.append("PDF chunk already embedded, skipping.")
+        state.logs.append("PDF chunk already embedded, skipping.")
         return state
 
     chunked_pdf_text = state.chunked_pdf_text
@@ -52,7 +52,7 @@ def insert_into_chroma(state: PipelineState) -> PipelineState:
             documents=[pdf_text.chunk],
             metadatas=[pdf_text.meta.__dict__]
         )
-        state.message.append(
+        state.logs.append(
             f"Inserted {i+1}/{total_chunk} chunk into Chroma.")
     summary_embedding = embed_model.encode(
         [state.final_summary], show_progress_bar=True)
@@ -62,6 +62,6 @@ def insert_into_chroma(state: PipelineState) -> PipelineState:
         documents=[state.final_summary],
         metadatas=[{"pdf_name": state.pdf_name}]
     )
-    state.message.append(
+    state.logs.append(
         f"Inserted final_summary: {state.final_summary}.")
     return state

@@ -1,19 +1,17 @@
-from dotenv import load_dotenv
-import os
-from backend.model.dto.PipelineState import PipelineState
+# from dotenv import load_dotenv
+# import os
+from backend.model.data_class.PipelineState import PipelineState
+from frontend.home_ui import render_main_section, render_side_bar
 
-from backend.nodes.extract_pdf_to_chunk import extract_pdf_to_chunk
-from backend.nodes.get_pdf_summary import get_pdf_summary
+# load_dotenv()
+# PDF_PATH = os.getenv("PDF_PATH")
 
-
-load_dotenv()
-PDF_PATH = os.getenv("PDF_PATH")
 
 state = PipelineState()
-state.pdf_path = PDF_PATH
+# state.pdf_path = PDF_PATH
 
-state = extract_pdf_to_chunk(state)
-state = get_pdf_summary(state)
 
-print("final_summary: ", state.final_summary)
-print("state message: ", state.message)
+state = PipelineState()
+
+state = render_side_bar(state)
+render_main_section(state)

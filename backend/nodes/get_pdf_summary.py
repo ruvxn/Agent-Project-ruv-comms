@@ -1,16 +1,13 @@
 import os
 import dotenv
-from backend.model.dto.PipelineState import PipelineState
+from backend.model.data_class.PipelineState import PipelineState
 from backend.utils.utils import chunked_summary_pdf, clean_text
-
-from backend.utils.wrapper import node_log
 
 dotenv.load_dotenv()
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 
-@node_log
 def get_pdf_summary(state: PipelineState) -> PipelineState:
     summaries = []
     for single_page_pdf_text in state.chunked_pdf_text:

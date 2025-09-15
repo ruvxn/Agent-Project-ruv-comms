@@ -1,14 +1,12 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class Meta:
+class Meta(BaseModel):
     pdf_name: str
     page_number: int
     chunk_summary: str
 
 
-@dataclass
-class PdfText:
+class PdfText(BaseModel):
     chunk: str
     meta: Meta
