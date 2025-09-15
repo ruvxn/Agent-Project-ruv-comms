@@ -1,10 +1,11 @@
-from Agent import Agent
-from tool import WebScrape, WebSearch
+from src.agent.Agent import Agent
+from src.tools.tool import WebScrape, WebSearch
 def main():
     websearch = WebSearch()
     webscrape = WebScrape()
     tools = [webscrape, websearch]
     web_agent = Agent(tools=tools)
+
     while True:
         try:
             print('================================ Human Message =================================')
