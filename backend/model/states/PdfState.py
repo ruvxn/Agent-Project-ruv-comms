@@ -1,0 +1,10 @@
+from pydantic import BaseModel
+from backend.model.states.PdfTextClass import PdfTextClass
+
+
+class PdfState(BaseModel):
+    pdf_path: str = ""
+    pdf_name: str = ""
+    chunked_pdf_text: list[PdfTextClass] = []
+    final_summary: str = ""
+    top_k_kb: str = ""

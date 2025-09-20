@@ -1,67 +1,146 @@
 from datetime import datetime
 import os
-import chromadb
 import uuid
 from dotenv import load_dotenv
-from chromadb import Collection, PersistentClient
+from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
-from backend.model.data_class.PipelineState import PipelineState
+import streamlit
+from backend.model.states.GraphState import GraphState
+from backend.model.states.PdfSummaryState import PdfSummaryClass, PdfSummaryState
+from backend.utils import get_embedding, log_decorator
 
 load_dotenv()
-EMBED_MODEL = os.getenv("EMBED_MODEL")
+
+CHROMA_PATH = os.getenv("CHROMA_PATH")
+PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
 
-def set_up_chroma_client(state: PipelineState):
-    CHROMA_PATH = os.getenv("CHROMA_PATH")
+@log_decorator
+def get_or_create_collection(state: GraphState):
+    state = streamlit.session_state.state
+    if not state.pdf.pdf_name:
+        state.pdf.pdf_name = PDF_NAME = os.path.splitext(
+            os.path.basename(state.pdf.pdf_path))[0]
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
 
     collection = chroma_client.get_or_create_collection(
-        name=state.pdf_name,
+        name=state.pdf.pdf_name,
         metadata={
-            "description": f"pdf {state.pdf_name} chunks and summary",
+            "description": f"pdf {state.pdf.pdf_name} chunks and chunk summary",
             "created": str(datetime.now())
         })
-    state.logs.append(f"collection {state.pdf_name} created or found")
+    state.logs.append(f"[collection] {state.pdf.pdf_name} created or found")
     return collection
 
 
-def insert_into_chroma(state: PipelineState) -> PipelineState:
-    collection = set_up_chroma_client(state)
+@log_decorator
+def get_or_create_summary_collection():
+    state = streamlit.session_state.state
+
+    chroma_client = PersistentClient(path=CHROMA_PATH)
+
+    collection = chroma_client.get_or_create_collection(
+        name=PDF_SUMMARY_COLLECTION,
+        metadata={
+            "description": f"pdf {PDF_SUMMARY_COLLECTION} chunks and chunk summary",
+            "created": str(datetime.now())
+        })
+    state.logs.append(
+        f"[collection] {PDF_SUMMARY_COLLECTION} created or found")
+    return collection
+
+
+@log_decorator
+def get_collection(collection_name: str):
+    chroma_client = PersistentClient(CHROMA_PATH)
+    try:
+        collection = chroma_client.get_collection(name=collection_name)
+        if collection and collection.count():
+            return collection
+        return None
+    except Exception:
+        return None
+
+
+@log_decorator
+def get_pdf_summary_state(state: GraphState) -> GraphState:
+    state = streamlit.session_state.state
+    collection = get_collection("PDF_SUMMARY_COLLECTION")
+    results = collection.get(include=["metadatas", "documents"])
+    documents = results["documents"]
+    metadatas = results["metadatas"]
+
+    extract_pdf_summary = []
+
+    for doc_list, meta_list in zip(documents, metadatas):
+        for doc, meta in zip(doc_list, meta_list):
+            pdf_name = meta.get("pdf_name")
+            if pdf_name:
+                extract_pdf_summary.append(PdfSummaryClass(
+                    pdf_name=pdf_name, final_summary=doc))
+
+    state.pdf_summary = PdfSummaryState(PdfSummary=extract_pdf_summary)
+    return state
+
+
+@log_decorator
+def insert_chunks(state: GraphState) -> GraphState:
+    state = streamlit.session_state.state
+    collection = get_or_create_collection(state)
 
     exist_embeding = collection.get(
-        where={"pdf_name": state.pdf_name},
+        where={"pdf_name": state.pdf.pdf_name},
         limit=1
     )
 
     if exist_embeding["documents"] and exist_embeding["documents"][0]:
-        state.logs.append("PDF chunk already embedded, skipping.")
+        state.logs.append("PDF chunk already embedded, skipping insertion.")
         return state
 
-    chunked_pdf_text = state.chunked_pdf_text
-    texts = [pdf_text.chunk for pdf_text in chunked_pdf_text]
-
-    embed_model = SentenceTransformer(EMBED_MODEL)
-    embedding = embed_model.encode(texts, show_progress_bar=True)
-    total_chunk = len(state.chunked_pdf_text)
+    chunked_pdf_text = state.pdf.chunked_pdf_text
+    total_chunk = len(state.pdf.chunked_pdf_text)
 
     for i, pdf_text in enumerate(chunked_pdf_text, start=0):
+
+        if pdf_text.embedding is None:
+            state.logs.append(f"Skipping chunk {i}: no embedding found.")
+            continue
+
         collection.add(
             ids=[str(uuid.uuid4())],
-            embeddings=[embedding[i]],
+            embeddings=[pdf_text.embedding[i]],
             documents=[pdf_text.chunk],
             metadatas=[pdf_text.meta.__dict__]
         )
         state.logs.append(
             f"Inserted {i+1}/{total_chunk} chunk into Chroma.")
-    summary_embedding = embed_model.encode(
-        [state.final_summary], show_progress_bar=True)
+
+    state.pdf.embeddings = None
+    return state
+
+
+@log_decorator
+def insert_pdf_summary(state: GraphState) -> GraphState:
+    state = streamlit.session_state.state
+    chroma_client = PersistentClient(path=CHROMA_PATH)
+
+    collection = chroma_client.get_or_create_collection(
+        name=PDF_SUMMARY_COLLECTION,
+        metadata={
+            "description": "user upload pdf file summary",
+            "created": str(datetime.now())
+        })
+
+    summary_embedding = get_embedding([state.pdf.final_summary])
+
     collection.add(
         ids=[str(uuid.uuid4())],
         embeddings=summary_embedding.tolist(),
-        documents=[state.final_summary],
-        metadatas=[{"pdf_name": state.pdf_name}]
+        documents=[state.pdf.final_summary],
+        metadatas=[{"pdf_name": state.pdf.pdf_name}]
     )
     state.logs.append(
-        f"Inserted final_summary: {state.final_summary}.")
+        f"Inserted final_summary: {state.pdf.final_summary}.")
+
     return state
