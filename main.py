@@ -1,5 +1,5 @@
 from src.agent.Agent import Agent
-from src.tools.tool import WebScrape, WebSearch
+from src.tools.tool import WebScrape, WebSearch, SemanticMemorySearch
 from langchain_core.messages import HumanMessage
 
 
@@ -23,12 +23,14 @@ def show_thinking(agent: Agent, user_input: str):
         for node_name, value in event.items():
             print(f"\n> Executing Node: '{node_name}'")
             if "messages" in value:
+                print(" -Messages:")
                 for message in value["messages"]:
                     message.pretty_print()
-            elif "plan" in value:
-                print(f"  Plan Created: {value['plan']}")
-            elif "critique" in value and value['critique'] != 'None':
-                print(f"  Critique Received: {value['critique']}")
+                other_data = {k: v for k, v in value.items() if k != "messages"}
+                if other_data:
+                    print(f"  - State Updates:\n")
+                    for key, val in other_data.items():
+                        print(f"{key}: {val}")
 
     print("\n--- Agent Finish ---\n")
 
@@ -36,7 +38,8 @@ def show_thinking(agent: Agent, user_input: str):
 def main():
     websearch = WebSearch()
     webscrape = WebScrape()
-    tools = [webscrape, websearch]
+    semanticmemorysearch = SemanticMemorySearch()
+    tools = [webscrape, websearch, semanticmemorysearch]
     web_agent = Agent(tools=tools)
     while True:
         try:

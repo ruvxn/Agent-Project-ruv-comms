@@ -7,6 +7,7 @@ from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
 
 
+
 class Agent:
     """An Agent class"""
     def __init__(self, tools: List[Any]):
@@ -28,13 +29,16 @@ class Agent:
         return final_state["messages"][-1].content
 
     def planner(self, state: State):
+        state["tools"] = self.tools
+        print(state["tools"])
         planner_messages = state["messages"]+ [
             (
                 "system",
                 "You are an expert planner, create a concise, step-by-step plan to answer the user's request. Respond with the plan only"
+                f"These are the tools available for use {state["tools"]}"
             )
         ]
-        plan = self.llm.invoke(planner_messages).content
+        plan = self.llm_with_tools.invoke(planner_messages).content
         state["plan"] = plan
 
         return state
@@ -60,6 +64,7 @@ class Agent:
             "Is the answer complete, accurate, and does it fully address the user's query?"
             "If the answer is good respond with 'yes'."
             "If it needs improvement, provide a concise critique of whats missing or wrong."
+            f"This is the plan {state["plan"]}"
         )
         critique_message = [
             state["messages"][0],
@@ -67,7 +72,8 @@ class Agent:
             ("system", critique_prompt)
         ]
 
-        critique = self.llm.invoke(critique_message).content
+        critique = self.llm_with_tools.invoke(critique_message).content
+        print(f' \nPrinting critique: \n {critique}')
         if "yes" in critique.lower():
             return {'critique':'None'}
         else:
