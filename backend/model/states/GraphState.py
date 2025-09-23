@@ -1,7 +1,6 @@
-from typing import Annotated
+from typing import Annotated, List
 from pydantic import BaseModel, Field, root_validator
 from backend.model.states.PdfState import PdfState
-from backend.model.states.PdfSummaryState import PdfSummaryState
 from backend.model.stores.LogStore import LogStore
 from backend.model.stores.MessageStore import MessageStore
 from frontend.utils import render_log, render_message
@@ -12,7 +11,7 @@ class GraphState(BaseModel):
     messages: Annotated[MessageStore, render_message] = Field(
         default_factory=MessageStore)
     logs: Annotated[LogStore, render_log] = Field(default_factory=LogStore)
-    pdf_summary: PdfSummaryState = Field(default_factory=PdfSummaryState)
+    collection_names_list: list[str] = []
 
     model_config = {
         "arbitrary_types_allowed": True

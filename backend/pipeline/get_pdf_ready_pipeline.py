@@ -20,6 +20,6 @@ def get_pdf_ready_pipeline(state: GraphState) -> GraphState:
     chunk_pdf_node(state)
     embed_pdf_node(state)
     insert_chunks(state)
-    get_summary_node(state)
+    # get_summary_node(state)
 
     return state

@@ -24,11 +24,11 @@ def chunk_pdf_node(state: GraphState) -> dict:
             continue
         chunk_page_text = get_chunk(clean_text(page_text))
         for single_chunk in chunk_page_text:
-            chunk_summary = single_chunk_summary(single_chunk)
+            # chunk_summary = single_chunk_summary(single_chunk)
             meta = Meta(
                 pdf_name=PDF_NAME,
                 page_number=page_num,
-                chunk_summary=chunk_summary
+                # chunk_summary=chunk_summary
             )
             pdf_text_list.append(
                 PdfTextClass(chunk=single_chunk, meta=meta, embedding=[]))

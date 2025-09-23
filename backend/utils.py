@@ -12,10 +12,10 @@ import streamlit as st
 
 load_dotenv()
 
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 1000))
-CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", 20))
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP"))
 SUMMARIZER_MODEL = os.getenv("SUMMARIZER_MODEL")
-SUMMARY_MAX_LENGTH = int(os.getenv("SUMMARY_MAX_LENGTH", 100))
+SUMMARY_MAX_LENGTH = int(os.getenv("SUMMARY_MAX_LENGTH"))
 EMBED_MODEL = os.getenv("EMBED_MODEL")
 
 summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
@@ -47,6 +47,9 @@ def get_chunk(data: str) -> list[str]:
 
 @log_decorator
 def get_embedding(chunk: str):
+    if isinstance(chunk, str):
+        chunk = [chunk]
+
     embed_model = SentenceTransformer(model_name_or_path=EMBED_MODEL)
     embed_result = embed_model.encode(
         chunk, show_progress_bar=True)
@@ -77,3 +80,10 @@ def clean_text(text: str) -> str:
     text = re.sub(r"•+", "-", text)
     text = text.strip()
     return text
+
+
+def get_user_input() -> str:
+    state = st.session_state.state
+    user_input = state.messages.user_query_list[-1].content if len(
+        state.messages.user_query_list) > 0 else None
+    return user_input

@@ -8,3 +8,4 @@ class PdfState(BaseModel):
     chunked_pdf_text: list[PdfTextClass] = []
     final_summary: str = ""
     top_k_kb: str = ""
+    is_upload: bool = False
