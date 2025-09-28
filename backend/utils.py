@@ -6,19 +6,19 @@ import os
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
-from transformers import pipeline
+# from transformers import pipeline
 from functools import wraps
 import streamlit as st
 
+from backend.model.states.GraphState import GraphState
+
 load_dotenv()
 
-CHUNK_SIZE = int(os.getenv("CHUNK_SIZE"))
-CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP"))
 SUMMARIZER_MODEL = os.getenv("SUMMARIZER_MODEL")
-SUMMARY_MAX_LENGTH = int(os.getenv("SUMMARY_MAX_LENGTH"))
 EMBED_MODEL = os.getenv("EMBED_MODEL")
 
-summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
+
+# summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
 
 
 def log_decorator(function):
@@ -36,10 +36,10 @@ def log_decorator(function):
 
 
 @log_decorator
-def get_chunk(data: str) -> list[str]:
+def get_chunk(data: str, state: GraphState) -> list[str]:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP
+        chunk_size=state.graph_config.CHUNK_SIZE,
+        chunk_overlap=state.graph_config.CHUNK_OVERLAP
     )
     chunks = splitter.split_text(data)
     return chunks
@@ -49,11 +49,15 @@ def get_chunk(data: str) -> list[str]:
 def get_embedding(chunk: str):
     if isinstance(chunk, str):
         chunk = [chunk]
-
-    embed_model = SentenceTransformer(model_name_or_path=EMBED_MODEL)
+    embed_model = load_model()
     embed_result = embed_model.encode(
         chunk, show_progress_bar=True)
     return embed_result
+
+
+@st.cache_resource
+def load_model():
+    return SentenceTransformer(model_name_or_path=EMBED_MODEL)
 
 
 @log_decorator

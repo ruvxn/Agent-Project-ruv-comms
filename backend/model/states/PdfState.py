@@ -9,3 +9,4 @@ class PdfState(BaseModel):
     final_summary: str = ""
     top_k_kb: str = ""
     is_upload: bool = False
+    is_processed: bool = False

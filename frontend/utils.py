@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 def render_log(logs, log_placeholder):
     if hasattr(log_placeholder, "container"):
         with log_placeholder.container():
-            for log in logs:
+            for log in reversed(logs):
                 st.write(log)
                 st.write("**********")
 

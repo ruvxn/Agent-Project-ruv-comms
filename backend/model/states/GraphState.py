@@ -1,5 +1,6 @@
 from typing import Annotated, List
 from pydantic import BaseModel, Field, root_validator
+from backend.model.states.ConfigState import ConfigState
 from backend.model.states.PdfState import PdfState
 from backend.model.stores.LogStore import LogStore
 from backend.model.stores.MessageStore import MessageStore
@@ -11,6 +12,7 @@ class GraphState(BaseModel):
     messages: Annotated[MessageStore, render_message] = Field(
         default_factory=MessageStore)
     logs: Annotated[LogStore, render_log] = Field(default_factory=LogStore)
+    graph_config: ConfigState = Field(default_factory=ConfigState)
     collection_names_list: list[str] = []
 
     model_config = {

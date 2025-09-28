@@ -10,7 +10,6 @@ from backend.utils import get_embedding, log_decorator
 load_dotenv()
 
 EMBED_MODEL = os.getenv("EMBED_MODEL")
-TOP_K = int(os.getenv("TOP_K"))
 
 
 @log_decorator
@@ -20,7 +19,7 @@ def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[st
     try:
         num = collection.count()
         result = collection.query(
-            query_embeddings=embeded_query, n_results=TOP_K, include=["documents", "distances", "metadatas"])
+            query_embeddings=embeded_query, n_results=state.graph_config.TOP_K, include=["documents", "distances", "metadatas"])
     except Exception:
         return "", 0
 
@@ -50,7 +49,7 @@ def top_k_result_to_log(state, query) -> List[PdfTextClass]:
             )
             top_k_result.append(pdf_text_obj)
             state.logs.append(
-                f"[TOP_{TOP_K}_RESULT] pdf_name: {pdf_text_obj.meta.pdf_name}, "
+                f"[TOP_{state.graph_config.TOP_K}_RESULT] pdf_name: {pdf_text_obj.meta.pdf_name}, "
                 f"page_number: {pdf_text_obj.meta.page_number}, "
                 # f"chunk_summary: {pdf_text_obj.meta.chunk_summary}"
                 f"chunk_content: {pdf_text_obj.chunk}"

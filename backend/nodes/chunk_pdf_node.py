@@ -22,7 +22,7 @@ def chunk_pdf_node(state: GraphState) -> dict:
         page_text = page.get_text().strip()
         if not page_text:
             continue
-        chunk_page_text = get_chunk(clean_text(page_text))
+        chunk_page_text = get_chunk(clean_text(page_text), state)
         for single_chunk in chunk_page_text:
             # chunk_summary = single_chunk_summary(single_chunk)
             meta = Meta(

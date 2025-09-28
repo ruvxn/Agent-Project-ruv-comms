@@ -94,6 +94,12 @@ def insert_chunks(state: GraphState) -> GraphState:
             state.logs.append(f"Skipping chunk {i}: no embedding found.")
             continue
 
+        exist_chunk = collection.get(where={"documents": pdf_text.chunk},
+                                     limit=1)
+        if exist_chunk["documents"]:
+            state.logs.append(f"Skipping chunk {i}: chunk already embedded.")
+            continue
+
         collection.add(
             ids=[str(uuid.uuid4())],
             embeddings=[pdf_text.embedding],

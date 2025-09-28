@@ -14,8 +14,6 @@ from backend.utils import get_embedding, get_user_input, log_decorator
 load_dotenv()
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
-TOP_K = int(os.getenv("TOP_K"))
-RAG_THRESHOLD = float(os.getenv("RAG_THRESHOLD"))
 PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
 
@@ -50,10 +48,10 @@ def rag_router(state: GraphState) -> str:
                     state.logs.append(
                         log_template.rag_retrieval_exception.format(e=e))
                     return "FALSE"
-                if top_k_kb and top_score >= RAG_THRESHOLD:
+                if top_k_kb and top_score >= state.graph_config.RAG_THRESHOLD:
                     state.pdf.top_k_kb = top_k_kb
                     state.logs.append(log_template.successful_log.format(
-                        top_score=top_score, RAG_THRESHOLD=RAG_THRESHOLD))
+                        top_score=top_score, RAG_THRESHOLD=state.graph_config.RAG_THRESHOLD))
                     return "TRUE"
                 else:
                     continue
@@ -65,9 +63,10 @@ def rag_router(state: GraphState) -> str:
         return "FALSE"
 
     if top_score <= 0:
-        state.logs.append(log_template.format(top_score=top_score))
+        state.logs.append(
+            log_template.chat_agent_log.format(top_score=top_score))
         return "FALSE"
 
     state.logs.append(log_template.no_kb_log.format(
-        top_score=top_score, RAG_THRESHOLD=RAG_THRESHOLD))
+        top_score=top_score, RAG_THRESHOLD=state.graph_config.RAG_THRESHOLD))
     return "NO_KB"

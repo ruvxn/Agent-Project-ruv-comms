@@ -28,7 +28,7 @@ def get_graph(state: GraphState) -> StateGraph:
         rag_router,
         {
             "TRUE": "rag_agent",
-            "FALSE": END,
+            "FALSE": "chat_agent",
             "NO_KB": "no_kb_agent",
         },
     )

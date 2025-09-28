@@ -11,6 +11,6 @@ class LogStore(list):
 
     def append(self, log):
         super().append(log)
-        if hasattr(self.log_placeholder, "container"):
+        if self.log_placeholder is not None and hasattr(self.log_placeholder, "container"):
             from frontend.utils import render_log
             render_log(self, self.log_placeholder)
