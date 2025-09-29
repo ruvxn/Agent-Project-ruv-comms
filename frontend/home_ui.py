@@ -109,6 +109,11 @@ def render_file_uploader(state: GraphState) -> GraphState:
             state.pdf.pdf_name = temp_file.name.split(".")[0]
 
         state.pdf.is_upload = True
+    else:
+        state.pdf.is_upload = False
+        state.pdf.is_processed = False
+
+    state.logs.append(f"is_upload: {state.pdf.is_upload}")
     return state
 
 

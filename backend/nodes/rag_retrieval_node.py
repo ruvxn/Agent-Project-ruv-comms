@@ -21,7 +21,7 @@ def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[st
         result = collection.query(
             query_embeddings=embeded_query, n_results=state.graph_config.TOP_K, include=["documents", "distances", "metadatas"])
     except Exception:
-        return "", 0
+        return None, 0.0
 
     if result.get("documents"):
         top_k_result = top_k_result_to_log(state, result)
@@ -33,7 +33,7 @@ def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[st
         #                       [:3])/min(3, len(top_k_scores))
     else:
         top_k_kb = None
-        top_score = 0
+        top_score = 0.0
     return top_k_kb, top_score
 
 

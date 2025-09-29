@@ -32,3 +32,4 @@ SYSTEM_LOG_LIST = SimpleNamespace(
 
 # In residential care,how many resident deaths in 2022–23
 # which proportion of people was highest for home care
+# how many portion people using aged care were women in 2024

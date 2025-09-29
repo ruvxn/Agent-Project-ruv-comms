@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-import uuid
+import hashlib
 from dotenv import load_dotenv
 from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
@@ -101,7 +101,7 @@ def insert_chunks(state: GraphState) -> GraphState:
             continue
 
         collection.add(
-            ids=[str(uuid.uuid4())],
+            ids=[chunk_id(pdf_text.chunk)],
             embeddings=[pdf_text.embedding],
             documents=[pdf_text.chunk],
             metadatas=[pdf_text.meta.__dict__]
@@ -128,7 +128,7 @@ def insert_pdf_summary(state: GraphState) -> GraphState:
     summary_embedding = get_embedding([state.pdf.final_summary])
 
     collection.add(
-        ids=[str(uuid.uuid4())],
+        ids=[chunk_id(state.pdf.final_summary)],
         embeddings=summary_embedding.tolist(),
         documents=[state.pdf.final_summary],
         metadatas=[{"pdf_name": state.pdf.pdf_name}]
@@ -137,3 +137,7 @@ def insert_pdf_summary(state: GraphState) -> GraphState:
         f"Inserted final_summary: {state.pdf.final_summary}.")
 
     return state
+
+
+def chunk_id(text: str) -> str:
+    return hashlib.md5(text.encode("utf-8")).hexdigest()
