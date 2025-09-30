@@ -1,32 +1,45 @@
 from langchain_core.messages import HumanMessage
+from langmem import create_memory_manager
 from .AgentState import State
 from langgraph.graph import StateGraph, START, END
 from langchain.chat_models import init_chat_model
-from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
-
-
-
+from src.memory.semantic import Semantic
+from src.memory.episodic import Episode
+from src.memory.QdrantStore import QdrantStore
+import sqlite3
 class Agent:
     """An Agent class"""
-    def __init__(self, tools: List[Any]):
+    def __init__(self, tools: List[Any], name: str):
         """init method for class Agent requires tools as a list of tools"""
+        self.name = name
         self.llm = init_chat_model("openai:gpt-4o-mini")
-        self.config = {"configurable": {"thread_id": "1"}}
         self.tools = tools
         self.llm_with_tools  = self.llm.bind_tools(self.tools)
-        self.graph = self.graph_builder()
+        self.manager =  create_memory_manager(
+                "gpt-4o-mini",
+                schemas=[Episode, Semantic],
+                instructions="Extract all user information and events as Episodes, and any facts as Semantic",
+            )
+        self.store = QdrantStore(collection_name="WebAgent")
 
     def run(self, user_input: str):
         """Method to run the agent/interact with the agent requires user input"""
         #Shows the final message from the LLM
-        input = {"messages": [HumanMessage(content=user_input)]}
-        final_state = self.graph.invoke(
-            input,
-            config=self.config
-        )
-        return final_state["messages"][-1].content
+        with sqlite3.connect(f"{self.name}.db") as conn:
+            graph = self.graph_builder()
+            memory = SqliteSaver(conn)
+            compiled = graph.compile(checkpointer=memory)
+            input = {"messages": [HumanMessage(content=user_input)]}
+            print("Just before invoke")
+            final_state = compiled.invoke(
+                input,
+                config=self.config
+            )
+            return final_state["messages"][-1].content
+
 
     def planner(self, state: State):
         state["tools"] = self.tools
@@ -58,6 +71,7 @@ class Agent:
         ai_response = self.llm_with_tools.invoke(messages_with_prompt)
         return {"messages":[ai_response]}
 
+
     def critique(self, state: State):
         critique_prompt = (
             "You are an expert critic, review the proposed final answer answer to the original user request."
@@ -85,13 +99,16 @@ class Agent:
             return "tools"
         return "critique"
 
+
     def should_continue(self, state: State):
         if state.get("critique") and state["critique"] != "None":
             return "chatbot"
         else:
+            extracted_memory = self.manager.invoke({"messages": state["messages"]})
+           # self.store.put(extracted_memory)
             return END
 
-    def graph_builder(self):
+    def graph_builder(self, conn=None):
         graph_builder = StateGraph(State)
         graph_builder.add_node("planner", self.planner)
 
@@ -115,6 +132,6 @@ class Agent:
             {"chatbot":"chatbot", "__end__": END}
         )
 
-        memory = InMemorySaver()
-        graph = graph_builder.compile(checkpointer=memory)
-        return graph
+        with sqlite3.connect('src/db/WebAgent.db', check_same_thread=False) as conn:
+            memory = SqliteSaver(conn)
+            return graph_builder.compile(checkpointer=memory)
