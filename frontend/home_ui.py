@@ -9,6 +9,8 @@ from langchain_core.messages import HumanMessage, AIMessage
 from backend.pipeline.workflow import get_graph
 from langsmith import traceable
 
+from backend.pipeline.workflow2 import get_graph2
+
 load_dotenv()
 
 FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
@@ -30,11 +32,10 @@ def render_main_section(state: GraphState) -> GraphState:
         state.messages.append(HumanMessage(content=user_input))
         placeholder = st.empty()
         placeholder.markdown("[AI is thinking...]")
-        compiled_graph = get_graph(state)
-        # state_for_invoke = state.copy()
-        # state_for_invoke.pdf = state.pdf.dict()
-        compiled_graph.invoke(state, config={
-            "configurable": {"thread_id": "abc123"}})
+        compiled_graph = get_graph2(state)
+        state_for_invoke = state.copy()
+        state_for_invoke.pdf = state.pdf.dict()
+        compiled_graph.invoke(state_for_invoke)
         placeholder.markdown(" ")
 
     return state

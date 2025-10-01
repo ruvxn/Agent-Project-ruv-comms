@@ -16,7 +16,8 @@ class GraphState(BaseModel):
     collection_names_list: list[str] = []
 
     model_config = {
-        "arbitrary_types_allowed": True
+        "arbitrary_types_allowed": True,
+        "validate_default": False
     }
 
     @root_validator(pre=True)
