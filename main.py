@@ -1,6 +1,7 @@
 import sqlite3
 from src.agent.Agent import Agent
-from src.tools.tool import WebScrape, WebSearch
+from src.tools.webscrape import WebScrape
+from src.tools.websearch import WebSearch
 from langchain_core.messages import HumanMessage
 
 def show_thinking(agent: Agent, user_input: str):

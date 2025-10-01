@@ -86,6 +86,7 @@ class QdrantStore():
     def get(self, query: str) -> list[str]:
         """retrieves memories given a query or a text input and returns a list of relevant memories"""
         vector = self.embedding.get_embedding(query)
+
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             limit=3,
@@ -95,7 +96,7 @@ class QdrantStore():
 
     def put(self, memories):
         """Stores the memory, while also checking for duplicate memories"""
-
+        print("Storing memories in QdrantStore")
         for memory in memories:
             check = self._check_for_duplicates(memory)
             if check is None:
@@ -104,6 +105,7 @@ class QdrantStore():
                 id = check
             if isinstance(memory.content, Semantic):
                 vector = self.embedding.get_embedding(memory.content)
+                print(vector)
                 self.client.upsert(
                     collection_name=self.collection_name,
                     points=[
@@ -137,6 +139,7 @@ class QdrantStore():
     def _check_for_duplicates(self, memory: MemoryObject) -> str | None:
         """Takes a memory object semantic or episodic memories and checks weather there are any similar memories"""
         vector = self.embedding.get_embedding(memory.content)
+        print(vector)
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             limit=1,

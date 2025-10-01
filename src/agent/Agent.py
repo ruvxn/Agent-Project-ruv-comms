@@ -81,7 +81,6 @@ class Agent:
             f"This is the plan {state["plan"]}"
         )
         critique_message = [
-            state["messages"][0],
             state["messages"][-1],
             ("system", critique_prompt)
         ]
@@ -105,10 +104,10 @@ class Agent:
             return "chatbot"
         else:
             extracted_memory = self.manager.invoke({"messages": state["messages"]})
-           # self.store.put(extracted_memory)
+            #self.store.put(extracted_memory)
             return END
 
-    def graph_builder(self, conn=None):
+    def graph_builder(self):
         graph_builder = StateGraph(State)
         graph_builder.add_node("planner", self.planner)
 
