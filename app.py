@@ -1,5 +1,5 @@
+import time
 from langchain_core.messages import HumanMessage, AIMessage
-
 from src.backend.agent.Agent import Agent
 from src.backend.tools.webscrape import WebScrape
 from src.backend.tools.websearch import WebSearch
@@ -42,6 +42,7 @@ def app():
        #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
         tools = [websearch, webscrape]
         st.session_state.messages = []
+        st.session_state.actions = []
         st.session_state.agent = Agent(tools=tools, name="WebAgent")
         with sqlite3.connect('src/backend/db/WebAgent.db', check_same_thread=False) as conn:
             memory = SqliteSaver(conn)
@@ -70,18 +71,35 @@ def app():
 
             input = {"messages": [HumanMessage(content=user_input)]}
             try:
-                with st.spinner("Processing..."):
+                #with st.title("Agent is thinking..."):
                     for event in graph.stream(
                             input,
                             config=st.session_state.config,
                             stream_mode="updates"
                     ):
-                        for node_name, value in event.items():
-                            if "messages" in value and value is not None:
-                                st.session_state.messages = load_message(value, st.session_state.messages)
-                            if node_name == "__end__":
-                                break
+                        status_placeholder = st.empty()
+                        with status_placeholder.status("Agent is thinking...", expanded=False):
+                            for node_name, value in event.items():
+                                if "messages" in value and value is not None:
+                                    agent_msg = [m for m in value["messages"] if isinstance(m, AIMessage)]
+                                    if agent_msg and agent_msg[-1].content:
+                                        # Update the last agent message with the actual response
+                                        st.session_state.messages[-1]["content"] = agent_msg[-1].content
+                                other_data = {k: v for k, v in value.items() if k != "messages"}
+                                for key, val in other_data.items():
+                                    st.write(f"{key}")
+                                    time.sleep(10)  # Simulate delay for streaming effect
+                                    print(f"{key}")
+                                    st.session_state.actions.append(f"{key}")
+
+                                    if node_name == "__end__":
+                                        break
+                        status_placeholder.empty()
                     msg = st.session_state.messages[-1]
+                    with st.expander("View Agent Thought Process"):
+                        for actions in st.session_state.actions:
+                            st.write(actions)
+
                     with st.chat_message(msg.get("role")):
                         if msg.get("role") == "agent":
                             st.markdown(f'<div class="agent-message-container"><div class="agent-message">{msg["content"]}</div></div>', unsafe_allow_html=True)
