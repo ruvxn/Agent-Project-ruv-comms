@@ -1,14 +1,16 @@
-import sqlite3
-from src.agent.Agent import Agent
-from src.tools.tool import WebScrape, WebSearch
+from src.backend.agent.Agent import Agent
+from src.backend.tools.webscrape import WebScrape
+from src.backend.tools.websearch import WebSearch
 from langchain_core.messages import HumanMessage
+from src.backend.tools.memorytool import MemoryTool
+
 
 def show_thinking(agent: Agent, user_input: str):
     """
     Streams the agent's execution process, printing the output of each node as it runs.
     """
     graph = agent.graph_builder()
-    config = {"configurable": {"thread_id": "2"}}
+    config = {"configurable": {"thread_id": "3"}}  # Example thread_id for concurrency
     input = {"messages":[HumanMessage(content=user_input)]}
 
     print("\n--- Agent Start ---")
@@ -41,9 +43,10 @@ def show_thinking(agent: Agent, user_input: str):
 def main():
     websearch = WebSearch()
     webscrape = WebScrape()
+    memory = MemoryTool()
     #semanticmemorysearch = SemanticMemorySearch()
 
-    tools = [webscrape, websearch]
+    tools = [memory]
 
     web_agent = Agent(tools=tools, name="WebAgent")
     while True:
@@ -59,5 +62,4 @@ def main():
         except Exception as e:
             print(f"An error occurred: {e}")
             break
-if __name__ == "__main__":
-    main()
+

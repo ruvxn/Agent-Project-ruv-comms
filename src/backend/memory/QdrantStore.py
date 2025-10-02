@@ -1,10 +1,10 @@
-from langgraph.store.base import BaseStore
+from typing import Any
 import os
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import VectorParams, Distance
 from openai import OpenAI
-from src.memory.semantic import Semantic
-from src.memory.episodic import Episode
+from src.backend.memory.semantic import Semantic
+from src.backend.memory.episodic import Episode
 from typing import Union
 
 MemoryObject = Union[Semantic, Episode,str]
@@ -49,7 +49,30 @@ class Embedding:
                 model=self.model,
                 input=text,
             )
-            # as vector
+            embeddings = response.data[0].embedding
+            if not embeddings or len(embeddings) == 0:
+                msg = "No embeddings returned from OpenAI."
+                raise ValueError(msg)
+
+            return list(embeddings)
+
+        elif isinstance(memory, Semantic):
+            response = self.client.embeddings.create(
+                model=self.model,
+                input=memory,
+            )
+            embeddings = response.data[0].embedding
+            if not embeddings or len(embeddings) == 0:
+                msg = "No embeddings returned from OpenAI."
+                raise ValueError(msg)
+
+            return list(embeddings)
+
+        elif isinstance(memory, str):
+            response = self.client.embeddings.create(
+                model=self.model,
+                input=memory,
+            )
             embeddings = response.data[0].embedding
             if not embeddings or len(embeddings) == 0:
                 msg = "No embeddings returned from OpenAI."
@@ -57,18 +80,7 @@ class Embedding:
 
             return list(embeddings)
         else:
-            response = self.client.embeddings.create(
-                model=self.model,
-                input=memory,
-            )
-            # as vector
-            embeddings = response.data[0].embedding
-            if not embeddings or len(embeddings) == 0:
-                msg = "No embeddings returned from OpenAI."
-                raise ValueError(msg)
-
-            return list(embeddings)
-
+            raise Exception(f"Unknown memory type: {type(memory)}")
 
 
 
@@ -83,67 +95,50 @@ class QdrantStore():
             )
         self.embedding = Embedding()
 
-    def get(self, query: str) -> list[str]:
+    def get(self, query: str) -> list[dict[str, Any]]:
         """retrieves memories given a query or a text input and returns a list of relevant memories"""
         vector = self.embedding.get_embedding(query)
         search_result = self.client.query_points(
             collection_name=self.collection_name,
-            limit=3,
-            vector=vector,
-        )
+            limit=5, #update this to get more relevant memories
+            query=vector,
+        ).points
+
         return [result.payload for result in search_result]
 
     def put(self, memories):
         """Stores the memory, while also checking for duplicate memories"""
-
         for memory in memories:
             check = self._check_for_duplicates(memory)
             if check is None:
                 id = memory.id
             else:
                 id = check
-            if isinstance(memory.content, Semantic):
-                vector = self.embedding.get_embedding(memory.content)
-                self.client.upsert(
-                    collection_name=self.collection_name,
-                    points=[
-                        models.PointStruct(
-                            id=id,
-                            vector=vector,
-                            payload=memory.content.model_dump(),
-                        )
-                    ]
-                )
-                print("Memory saved semantic")
-
-            elif isinstance(memory.content, Episode):
-                vector = self.embedding.get_embedding(memory.content)
-                self.client.upsert(
-                    collection_name=self.collection_name,
-                    points=[
-                        models.PointStruct(
-                            id=id,
-                            vector=vector,
-                            payload=memory.content.model_dump(),
-                        )
-                    ]
-                )
-                print("Memory saved episode")
-
-            else:
-                raise Exception(f"Unknown memory type: {type(memory)}")
-
+            vector = self.embedding.get_embedding(memory.content)
+            self.client.upsert(
+                collection_name=self.collection_name,
+                points=[
+                    models.PointStruct(
+                        id=id,
+                        vector=vector,
+                        payload=memory.content.model_dump(),
+                    )
+                ]
+            )
 
     def _check_for_duplicates(self, memory: MemoryObject) -> str | None:
-        """Takes a memory object semantic or episodic memories and checks weather there are any similar memories"""
+        """Takes a memory object semantic or episodic memories and checks weather there are any similar
+        memories already in the storage"""
         vector = self.embedding.get_embedding(memory.content)
+
         search_result = self.client.query_points(
             collection_name=self.collection_name,
             limit=1,
-            vector=vector,
-        )
+            query=vector,
+            score_threshold=0.90,
+        ).points
 
-        if search_result and search_result[0].score > 0.95:
+        if search_result:
             return search_result[0].id
         else:
             return None
