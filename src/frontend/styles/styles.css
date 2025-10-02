@@ -4,7 +4,7 @@
 
 .user-message-container {
     display: flex;
-    justify-content: flex-end; /* Aligns the bubble and icon to the right */
+    justify-content: flex-end;
     width: 100%;
 }
 .user-message {
@@ -15,12 +15,12 @@
     padding: 10px 15px;
     margin: 5px;
     max-width: 70%;
-    align-self: flex-end; /* Aligns the bubble itself to the right */
+    align-self: flex-end;
 }
 
 .agent-message-container {
     display: flex;
-    justify-content: flex-start; /* Aligns the bubble and icon to the left */
+    justify-content: flex-start;
     width: 100%;
 }
 .agent-message {
@@ -31,6 +31,6 @@
     padding: 10px 15px;
     margin: 5px;
     max-width: 70%;
-    align-self: start; /* Aligns the bubble itself to the left */
-}/* General container for messages to allow flexbox alignment */
+    align-self: start;
+}
 
