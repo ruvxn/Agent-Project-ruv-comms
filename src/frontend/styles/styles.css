@@ -1,0 +1,36 @@
+.stChatMessage {
+    display: flex;
+}
+
+.user-message-container {
+    display: flex;
+    justify-content: flex-end; /* Aligns the bubble and icon to the right */
+    width: 100%;
+}
+.user-message {
+    background-color: #2d2d2d;
+    color: #000;
+    text-decoration-color: #E0E0E0;
+    border-radius: 20px;
+    padding: 10px 15px;
+    margin: 5px;
+    max-width: 70%;
+    align-self: flex-end; /* Aligns the bubble itself to the right */
+}
+
+.agent-message-container {
+    display: flex;
+    justify-content: flex-start; /* Aligns the bubble and icon to the left */
+    width: 100%;
+}
+.agent-message {
+    background-color: #2f2f2f;
+    color: #000;
+    border: 1px solid #E0E0E0;
+    border-radius: 20px;
+    padding: 10px 15px;
+    margin: 5px;
+    max-width: 70%;
+    align-self: start; /* Aligns the bubble itself to the left */
+}/* General container for messages to allow flexbox alignment */
+
