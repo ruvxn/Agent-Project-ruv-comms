@@ -11,7 +11,7 @@ from src.frontend.main import main
 import random
 
 def load_css():
-    with open("src/frontend/styles.css") as f:
+    with open("src/frontend/styles/styles.css") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 def load_message(messages, state):
@@ -28,13 +28,14 @@ def app():
     load_css()
     st.set_page_config(layout="wide")
     st.title("Agent")
-    if "config" not in st.session_state:
+    if "config" not in st.session_state or "agent" not in st.session_state:
         id = random.randint(1000, 10000)
         st.session_state.config = {"configurable": {"thread_id": id}}
+       # """thread id is used for concurrency and state management for the agent however there is no way to save this on the client side yet so conversations will be lost"""
         websearch = WebSearch()
         webscrape = WebScrape()
-        memory = MemoryTool()
-        tools = [memory, websearch, webscrape]
+       #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
+        tools = [websearch, webscrape]
         st.session_state.messages = []
         st.session_state.agent = Agent(tools=tools, name="WebAgent")
         with sqlite3.connect('src/backend/db/WebAgent.db', check_same_thread=False) as conn:
