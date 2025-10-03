@@ -3,7 +3,8 @@ import os
 from dotenv import load_dotenv
 import streamlit
 from backend.model.states.GraphState import GraphState
-from backend.model.states.PdfTextClass import Meta, PdfTextClass
+from backend.model.states.qa_state.PdfTextClass import Meta, PdfTextClass
+
 
 from backend.utils import get_embedding, log_decorator
 

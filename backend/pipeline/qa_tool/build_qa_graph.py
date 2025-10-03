@@ -1,12 +1,11 @@
 from langgraph.graph import StateGraph, START, END
 from backend.model.states.GraphState import GraphState
-from backend.nodes.chat_agent import chat_agent
-from backend.nodes.no_kb_agent import no_kb_agent
-from backend.nodes.rag_agent import rag_agent
-from backend.pipeline.get_pdf_ready_pipeline import get_pdf_ready_pipeline
+from backend.nodes.qa_node.chat_agent import chat_agent
+from backend.nodes.qa_node.no_kb_agent import no_kb_agent
+from backend.nodes.qa_node.rag_agent import rag_agent
+from backend.pipeline.qa_tool.get_pdf_ready_pipeline import get_pdf_ready_pipeline
+from backend.pipeline.qa_tool.rag_router import rag_router
 from backend.pipeline.upload_check_router import upload_check_router
-from backend.pipeline.rag_router import rag_router
-from langgraph.checkpoint.memory import MemorySaver
 
 
 def build_qa_graph():
@@ -45,6 +44,4 @@ def build_qa_graph():
     graph.set_finish_point("no_kb_agent")
     graph.set_finish_point("rag_agent")
 
-    short_term_memory = MemorySaver()
-
-    return graph.compile(checkpointer=short_term_memory)
+    return graph.compile()

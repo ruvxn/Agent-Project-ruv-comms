@@ -1,6 +1,6 @@
 from attr import dataclass
 from backend.model.states.GraphState import GraphState
-from backend.model.states.ToolMetaDict import ToolMetaDict
+from backend.model.states.tool_state.ToolMetaDict import ToolMetaDict
 
 
 @dataclass

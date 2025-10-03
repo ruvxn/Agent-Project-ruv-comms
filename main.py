@@ -18,7 +18,7 @@ def start():
         st.session_state.state = GraphState()
 
     state = st.session_state.state
-    state.pdf.pdf_path = PDF_PATH
+    state.qa_state.pdf_path = PDF_PATH
 
     if "message_placeholder" not in st.session_state:
         st.session_state.message_placeholder = st.empty()

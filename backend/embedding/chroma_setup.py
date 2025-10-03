@@ -17,19 +17,20 @@ PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 @log_decorator
 def get_or_create_collection(state: GraphState):
     state = streamlit.session_state.state
-    if not state.pdf.pdf_name:
-        state.pdf.pdf_name = PDF_NAME = os.path.splitext(
-            os.path.basename(state.pdf.pdf_path))[0]
+    if not state.qa_state.pdf_name:
+        state.qa_state.pdf_name = PDF_NAME = os.path.splitext(
+            os.path.basename(state.qa_state.pdf_path))[0]
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
 
     collection = chroma_client.get_or_create_collection(
-        name=state.pdf.pdf_name,
+        name=state.qa_state.pdf_name,
         metadata={
-            "description": f"pdf {state.pdf.pdf_name} chunks and chunk summary",
+            "description": f"pdf {state.qa_state.pdf_name} chunks and chunk summary",
             "created": str(datetime.now())
         })
-    state.logs.append(f"[collection] {state.pdf.pdf_name} created or found")
+    state.logs.append(
+        f"[collection] {state.qa_state.pdf_name} created or found")
     return collection
 
 
@@ -85,8 +86,8 @@ def insert_chunks(state: GraphState) -> GraphState:
     #     state.logs.append("PDF chunk already embedded, skipping insertion.")
     #     return state
 
-    chunked_pdf_text = state.pdf.chunked_pdf_text
-    total_chunk = len(state.pdf.chunked_pdf_text)
+    chunked_pdf_text = state.qa_state.chunked_pdf_text
+    total_chunk = len(state.qa_state.chunked_pdf_text)
 
     for i, pdf_text in enumerate(chunked_pdf_text, start=0):
 
@@ -122,19 +123,19 @@ def insert_pdf_summary(state: GraphState) -> GraphState:
         metadata={
             "description": "user upload pdf file summary",
             "created": str(datetime.now()),
-            "pdf_name": state.pdf.pdf_name
+            "pdf_name": state.qa_state.pdf_name
         })
 
-    summary_embedding = get_embedding([state.pdf.final_summary])
+    summary_embedding = get_embedding([state.qa_state.final_summary])
 
     collection.add(
-        ids=[chunk_id(state.pdf.final_summary)],
+        ids=[chunk_id(state.qa_state.final_summary)],
         embeddings=summary_embedding.tolist(),
-        documents=[state.pdf.final_summary],
-        metadatas=[{"pdf_name": state.pdf.pdf_name}]
+        documents=[state.qa_state.final_summary],
+        metadatas=[{"pdf_name": state.qa_state.pdf_name}]
     )
     state.logs.append(
-        f"Inserted final_summary: {state.pdf.final_summary}.")
+        f"Inserted final_summary: {state.qa_state.final_summary}.")
 
     return state
 

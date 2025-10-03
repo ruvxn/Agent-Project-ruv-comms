@@ -22,13 +22,10 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 @log_decorator
 async def tool_agent_async(state: GraphState) -> GraphState:
     user_input = get_user_input()
-    is_upload = state.pdf.is_upload
-    state.logs.append(f"testtttttt:{is_upload}")
+    is_upload = state.qa_state.is_upload
     client = ollama.AsyncClient()
     system_prompt = SYSTEM_PROMPT_LIST.tool_router_prompt.format(
         user_input=user_input, is_upload=is_upload)
-
-    state.logs.append(f"{system_prompt}")
 
     if not user_input:
         return state

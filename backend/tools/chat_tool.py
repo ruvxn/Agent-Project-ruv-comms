@@ -4,7 +4,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 import os
 import streamlit
 from backend.model.states.GraphState import GraphState
-from backend.model.states.ToolReturnClass import ToolReturnClass
+from backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
 from backend.tools.base_tool import BaseTool
 from backend.utils import get_user_input, log_decorator
 

@@ -9,7 +9,7 @@ from langchain_core.messages import HumanMessage, AIMessage
 from backend.pipeline.workflow import get_graph
 from langsmith import traceable
 
-from backend.pipeline.workflow2 import get_graph2
+from backend.pipeline.workflow import get_graph
 
 load_dotenv()
 
@@ -32,9 +32,10 @@ def render_main_section(state: GraphState) -> GraphState:
         state.messages.append(HumanMessage(content=user_input))
         placeholder = st.empty()
         placeholder.markdown("[AI is thinking...]")
-        compiled_graph = get_graph2(state)
+        compiled_graph = get_graph(state)
         state_for_invoke = state.copy()
-        state_for_invoke.pdf = state.pdf.dict()
+        state_for_invoke.qa_state = state.qa_state.dict()
+        state_for_invoke.graph_config = state.graph_config.dict()
         compiled_graph.invoke(state_for_invoke)
         placeholder.markdown(" ")
 
@@ -54,7 +55,6 @@ def render_log_side_bar(state: GraphState, log_tab):
         if state.logs.log_placeholder is None:
             state.logs.log_placeholder = st.empty()
 
-        st.subheader("Processor Logs")
         # st.sidebar.markdown("[Chroma](http://localhost:8000/chroma)")
     from frontend.utils import render_log
     render_log(state.logs, state.logs.log_placeholder)
@@ -106,15 +106,15 @@ def render_file_uploader(state: GraphState) -> GraphState:
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
             temp_file.write(file_uploader.read())
             temp_file.flush()
-            state.pdf.pdf_path = temp_file.name
-            state.pdf.pdf_name = temp_file.name.split(".")[0]
+            state.qa_state.pdf_path = temp_file.name
+            state.qa_state.pdf_name = temp_file.name.split(".")[0]
 
-        state.pdf.is_upload = True
+        state.qa_state.is_upload = True
     else:
-        state.pdf.is_upload = False
-        state.pdf.is_processed = False
+        state.qa_state.is_upload = False
+        state.qa_state.is_processed = False
 
-    state.logs.append(f"is_upload: {state.pdf.is_upload}")
+    state.logs.append(f"is_upload: {state.qa_state.is_upload}")
     return state
 
 

@@ -20,7 +20,7 @@ def rag_agent(state: GraphState) -> GraphState:
 
     prompt = state.messages.system_message_list.top_k_kb_found_prompt.format(
         user_input=user_input,
-        top_k_kb=state.pdf.top_k_kb)
+        top_k_kb=state.qa_state.top_k_kb)
 
     if user_input:
         response = chat(

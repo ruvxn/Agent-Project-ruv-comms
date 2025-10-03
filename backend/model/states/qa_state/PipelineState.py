@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from backend.model.states.PdfTextClass import PdfTextClass
+from backend.model.states.qa_state.PdfTextClass import PdfTextClass
 
 
 class PipelineState(BaseModel):

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from backend.model.states.PdfTextClass import PdfTextClass
+
+from backend.model.states.qa_state.PdfTextClass import PdfTextClass
 
 
 class PdfState(BaseModel):

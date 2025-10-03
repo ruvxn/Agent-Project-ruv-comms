@@ -3,9 +3,7 @@ from dotenv import load_dotenv
 import streamlit
 from backend.embedding.chroma_setup import get_all_collection_name, get_collection, get_or_create_summary_collection
 from backend.model.states.GraphState import GraphState
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-from backend.nodes.rag_retrieval_node import rag_retrieval_node
-from backend.pipeline.get_pdf_ready_pipeline import get_pdf_ready_pipeline
+from backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
 
 from backend.utils import get_embedding, get_user_input, log_decorator
 
@@ -48,7 +46,7 @@ def rag_router(state: GraphState) -> str:
                         log_template.rag_retrieval_exception.format(e=e))
                     return "FALSE"
                 if top_k_kb and top_score >= state.graph_config.RAG_THRESHOLD:
-                    state.pdf.top_k_kb = top_k_kb
+                    state.qa_state.top_k_kb = top_k_kb
                     state.logs.append(log_template.successful_log.format(
                         top_score=top_score, RAG_THRESHOLD=state.graph_config.RAG_THRESHOLD))
                     return "TRUE"
