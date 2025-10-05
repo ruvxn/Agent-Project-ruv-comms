@@ -3,7 +3,8 @@ from langmem import create_memory_manager
 from .AgentState import State
 from langgraph.graph import StateGraph, START, END
 from langchain.chat_models import init_chat_model
-
+import asyncio
+import websockets
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
@@ -28,7 +29,7 @@ class Agent:
             )
         #self.store = QdrantStore(collection_name="WebAgent") #don't uncomment if you don't have qdrant running
 
-    def run(self, user_input: str):
+    async def run(self, user_input: str):
         """Method to run the agent/interact with the agent requires user input"""
         #Shows the final message from the LLM
         with sqlite3.connect(f"{self.name}.db") as conn:
@@ -44,7 +45,7 @@ class Agent:
             return final_state["messages"][-1].content
 
 
-    def planner(self, state: State):
+    async def planner(self, state: State):
         state["tools"] = self.tools
 
         planner_messages =  [("user", f"{state["messages"][-1].content}")] + [
@@ -55,11 +56,12 @@ class Agent:
             )
         ]
         plan = self.llm_openai_tools.invoke(planner_messages).content
+
         state["plan"] = plan
 
         return state
 
-    def chat(self, state: State):
+    async def chat(self, state: State):
         system_prompt = (
             "You are a helpful assistant. Your goal is to answer the user's request by following the plan.\n"
             "1. First, decide if you need to call a tool to execute the current step of the plan.\n"
@@ -75,7 +77,7 @@ class Agent:
         return {"messages":[ai_response]}
 
 
-    def critique(self, state: State):
+    async def critique(self, state: State):
         critique_prompt = (
             "You are an expert critic, review the proposed final answer answer to the original user request."
             "Is the answer complete, accurate, and does it fully address the user's query?"
@@ -95,25 +97,48 @@ class Agent:
         else:
             return {'critique': critique}
 
-    def route_tools(self, state: State):
+    async def route_tools(self, state: State):
         ai_message = state["messages"][-1]
         if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
             return "tools"
         return "critique"
 
 
-    def should_continue(self, state: State):
+    async def should_continue(self, state: State):
         if state.get("critique") and state["critique"] != "None":
             return "chatbot"
         else:
-            #extracted_memory = self.manager.invoke({"messages": state["messages"]})
-            #self.store.put(extracted_memory)
+            # extracted_memory = self.manager.invoke({"messages": state["messages"]})
+            # self.store.put(extracted_memory)
             return END
 
-    def graph_builder(self):
+    async def should_communicate(self, state: State):
+        planner_messages = [("plan", f"{state["plan"]}")] + [("user", f"{state["messages"][-1].content}")] + [
+            (
+                "system",
+                "decide whether the users request can be completed with the tools available. If it can be completed"
+                "respond with continue otherwise respond with communicate"
+                f"These are the tools available for use {state["tools"]}"
+                f"you response should be either continue or communicate only"
+            )
+        ]
+        communicate = self.llm_openai_tools.invoke(planner_messages).content
+        if communicate == "continue":
+            return "chatbot"
+        else:
+            return "communicate"
+
+    async def communicate(self, state: State):
+        uri = "ws://localhost:8765"
+        async with websockets.connect(uri) as websocket:
+            await websocket.send(state["messages"][-1].content)
+            response = await websocket.recv()
+            return {"messages": [HumanMessage(content=response)]}
+
+    async def graph_builder(self):
         graph_builder = StateGraph(State)
         graph_builder.add_node("planner", self.planner)
-
+        graph_builder.add_node("should_communicate", self.should_communicate)
         graph_builder.add_node("chatbot", self.chat)
         tool_node = ToolNode(tools=self.tools)
         graph_builder.add_node("tools", tool_node)
@@ -133,7 +158,11 @@ class Agent:
             self.should_continue,
             {"chatbot":"chatbot", "__end__": END}
         )
-
+        graph_builder.add_conditional_edges(
+            "should_communicate",
+            self.should_communicate,
+            {"communicate": "communicate", "continue": "chatbot"}
+        )
         with sqlite3.connect('src/backend/db/WebAgent.db', check_same_thread=False) as conn:
             memory = SqliteSaver(conn)
             return graph_builder.compile(checkpointer=memory)
