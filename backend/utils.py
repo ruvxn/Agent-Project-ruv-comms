@@ -9,6 +9,7 @@ from sentence_transformers import SentenceTransformer
 # from transformers import pipeline
 from functools import wraps
 import streamlit as st
+from transformers import pipeline
 
 from backend.model.states.GraphState import GraphState
 
@@ -16,9 +17,7 @@ load_dotenv()
 
 SUMMARIZER_MODEL = os.getenv("SUMMARIZER_MODEL")
 EMBED_MODEL = os.getenv("EMBED_MODEL")
-
-
-# summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
+summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
 
 
 def log_decorator(function):

@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from backend.model.states.GraphState import GraphState
-from backend.nodes.qa_node.chat_agent import chat_agent
+from backend.nodes.chat_agent import chat_agent
 from backend.nodes.qa_node.no_kb_agent import no_kb_agent
 from backend.nodes.qa_node.rag_agent import rag_agent
 from backend.pipeline.qa_tool.get_pdf_ready_pipeline import get_pdf_ready_pipeline

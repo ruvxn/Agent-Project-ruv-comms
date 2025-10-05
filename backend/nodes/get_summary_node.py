@@ -13,9 +13,14 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 @log_decorator
 def get_summary_node(state: GraphState) -> GraphState:
     summaries = []
-    state = streamlit.session_state.state
 
-    for single_page_pdf_text in state.qa_state.chunked_pdf_text:
+    if state.qa_state.final_summary:
+        return
+
+    for count, single_page_pdf_text in enumerate(state.qa_state.chunked_pdf_text, start=1):
+        state.logs.append(
+            f"[Summary Node] {count}/{len(state.qa_state.chunked_pdf_text)} chunk summary generated."
+        )
         summaries.append(single_chunk_summary(
             clean_text(single_page_pdf_text.chunk)))
 

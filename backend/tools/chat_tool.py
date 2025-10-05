@@ -15,7 +15,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 @log_decorator
 class chat_tool(BaseTool):
-    """Respond to user queries that don't require PDF;"""
+    """Respond to user queries"""
 
     def invoke(self, arg: dict) -> ToolReturnClass:
         user_input = get_user_input()
@@ -25,7 +25,7 @@ class chat_tool(BaseTool):
             response = chat(
                 OLLAMA_MODEL, [{"role": "user", "content": user_input}])
 
-            state.messages.append(AIMessage(content=response.message.content))
+        state.messages.append(AIMessage(content=response.message.content))
 
         return ToolReturnClass(
             state=state,

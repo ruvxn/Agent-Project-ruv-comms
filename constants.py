@@ -33,16 +33,20 @@ SYSTEM_LOG_LIST = SimpleNamespace(
 SYSTEM_PROMPT_LIST = SimpleNamespace(
     tool_router_prompt=(
         "You are a Tool Router. User asked: {user_input}\n"
-        "NOTE: NOW is_upload={is_upload}.\n"
+        "NOTE: PDF uploaded={is_upload}.\n PDF summary exists: {has_summary}\n"
         "Available tools:\n"
-        "- pdf_qa_tool : MUST be used for any question if is_upload == True.\n"
-        "- chat_tool : ONLY used if is_upload == False.\n"
+        "- pdf_qa_tool : answer questions using the uploaded PDF.\n"
+        "- summary_tool : generate a final summary of the uploaded PDF.\n"
+        "- chat_tool : answer questions that do not require the PDF.\n"
         "Rules:\n"
-        "- If is_upload == True, ALWAYS return exactly:\n"
-        "  {{'tool_name': 'pdf_qa_tool', 'args': {{}}}}\n"
-        "- If is_upload == False, ALWAYS return exactly:\n"
-        "  {{'tool_name': 'chat_tool', 'args': {{}}}}\n"
-        "- Do not output any text other than this JSON object.\n"
+        "- Decide which tool is most appropriate based on the user question and PDF status.\n"
+        "- If the user wants a PDF summary, use summary_tool.\n"
+        "- Else, If is_upload == True, ALWAYS use qa_tool.\n"
+        "- Else, use chat_tool.\n"
+        "- Respond ONLY with a valid JSON object in this exact format:\n"
+        "  {{'tool_name': '<tool_name>', 'args': {{}}}}\n"
+        "- Do not include any extra text or explanation.\n"
+        "- JSON must be parseable.\n"
     )
 )
 

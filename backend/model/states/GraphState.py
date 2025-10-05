@@ -13,7 +13,7 @@ class GraphState(BaseModel):
         default_factory=MessageStore)
     logs: Annotated[LogStore, render_log] = Field(default_factory=LogStore)
     graph_config: ConfigState = Field(default_factory=ConfigState)
-    collection_names_list: list[str] = []
+    collection_names_list: list[str] = Field(default_factory=list)
 
     model_config = {
         "arbitrary_types_allowed": True,

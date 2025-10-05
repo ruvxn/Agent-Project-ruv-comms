@@ -77,15 +77,6 @@ def insert_chunks(state: GraphState) -> GraphState:
     state = streamlit.session_state.state
     collection = get_or_create_collection(state)
 
-    # exist_embeding = collection.get(
-    #     where={"pdf_name": state.pdf.pdf_name},
-    #     limit=1
-    # )
-
-    # if exist_embeding["documents"] and exist_embeding["documents"][0]:
-    #     state.logs.append("PDF chunk already embedded, skipping insertion.")
-    #     return state
-
     chunked_pdf_text = state.qa_state.chunked_pdf_text
     total_chunk = len(state.qa_state.chunked_pdf_text)
 
@@ -95,8 +86,7 @@ def insert_chunks(state: GraphState) -> GraphState:
             state.logs.append(f"Skipping chunk {i}: no embedding found.")
             continue
 
-        exist_chunk = collection.get(where={"documents": pdf_text.chunk},
-                                     limit=1)
+        exist_chunk = collection.get(ids=[chunk_id(pdf_text.chunk)])
         if exist_chunk["documents"]:
             state.logs.append(f"Skipping chunk {i}: chunk already embedded.")
             continue
@@ -116,6 +106,10 @@ def insert_chunks(state: GraphState) -> GraphState:
 @log_decorator
 def insert_pdf_summary(state: GraphState) -> GraphState:
     state = streamlit.session_state.state
+
+    if state.qa_state.final_summary:
+        return
+
     chroma_client = PersistentClient(path=CHROMA_PATH)
 
     collection = chroma_client.get_or_create_collection(
@@ -125,6 +119,12 @@ def insert_pdf_summary(state: GraphState) -> GraphState:
             "created": str(datetime.now()),
             "pdf_name": state.qa_state.pdf_name
         })
+
+    exist_chunk = collection.get(ids=[chunk_id(
+        state.qa_state.final_summary)]) if state.qa_state.final_summary else None
+    if exist_chunk and exist_chunk["documents"]:
+        state.logs.append(
+            f"Skipping final_summary: final_summary already embedded.")
 
     summary_embedding = get_embedding([state.qa_state.final_summary])
 

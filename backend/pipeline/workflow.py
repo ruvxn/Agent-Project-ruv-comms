@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from backend.model.states.GraphState import GraphState
-from backend.nodes.tool_agent import tool_agent
+from backend.tools.tool_agent import tool_agent
 
 
 def get_graph(state: GraphState) -> StateGraph:

@@ -7,7 +7,8 @@ import ollama
 import streamlit
 from backend.model.states.GraphState import GraphState
 from backend.tools.chat_tool import chat_tool
-from backend.tools.pdf_qa_tool import pdf_qa_tool
+from backend.tools.qa_tool import qa_tool
+from backend.tools.summary_tool import summary_tool
 from backend.utils import get_user_input, log_decorator
 from ollama import ChatResponse
 import streamlit as st
@@ -21,11 +22,13 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
 @log_decorator
 async def tool_agent_async(state: GraphState) -> GraphState:
+    state = st.session_state.state
     user_input = get_user_input()
     is_upload = state.qa_state.is_upload
+    has_summary = bool(getattr(state.qa_state, "final_summary", None))
     client = ollama.AsyncClient()
     system_prompt = SYSTEM_PROMPT_LIST.tool_router_prompt.format(
-        user_input=user_input, is_upload=is_upload)
+        user_input=user_input, is_upload=is_upload, has_summary=has_summary)
 
     if not user_input:
         return state
@@ -34,7 +37,7 @@ async def tool_agent_async(state: GraphState) -> GraphState:
         OLLAMA_MODEL,
         messages=[{"role": "system", "content": system_prompt},
                   {"role": "user", "content": user_input}],
-        tools=[pdf_qa_tool, chat_tool],
+        tools=[qa_tool, chat_tool, summary_tool],
     )
 
     state.logs.append(f"{response}")
