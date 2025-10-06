@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, START, END
 from backend.model.states.GraphState import GraphState
-from backend.nodes.get_summary_node import get_summary_node
-from backend.nodes.chat_agent import chat_agent
+from backend.nodes.summary_node.get_summary_node import get_summary_node
+from backend.nodes.utils.chat_agent import chat_agent
 from backend.pipeline.qa_tool.get_pdf_ready_pipeline import get_pdf_ready_pipeline
 from backend.pipeline.summary_tool.process_check_router import process_check_router
 

@@ -1,6 +1,6 @@
-from backend.tools.chat_tool import chat_tool
-from backend.tools.qa_tool import qa_tool
-from backend.tools.summary_tool import summary_tool
+from backend.tools.fei_tool.chat_tool import chat_tool
+from backend.tools.fei_tool.qa_tool import qa_tool
+from backend.tools.fei_tool.summary_tool import summary_tool
 
 
 def get_tool_registry():

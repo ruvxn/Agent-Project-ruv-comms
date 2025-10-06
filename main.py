@@ -4,7 +4,7 @@ import streamlit as st
 from backend.model.states.GraphState import GraphState
 from backend.model.stores.LogStore import LogStore
 from backend.model.stores.MessageStore import MessageStore
-from backend.pipeline.workflow import get_graph
+from backend.pipeline.get_graph import get_graph
 from frontend.home_ui import render_main_section, render_log_side_bar, render_sidebar
 
 

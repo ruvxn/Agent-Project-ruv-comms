@@ -23,6 +23,7 @@ summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
 def log_decorator(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
+        state = None
         try:
             state = st.session_state.state
             if hasattr(state, "logs") and state.logs is not None:

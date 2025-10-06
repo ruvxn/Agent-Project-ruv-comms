@@ -6,10 +6,10 @@ from dotenv import load_dotenv
 import streamlit as st
 from backend.model.states.GraphState import GraphState
 from langchain_core.messages import HumanMessage, AIMessage
-from backend.pipeline.workflow import get_graph
+from backend.pipeline.get_graph import get_graph
 from langsmith import traceable
 
-from backend.pipeline.workflow import get_graph
+from backend.pipeline.get_graph import get_graph
 
 load_dotenv()
 

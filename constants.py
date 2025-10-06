@@ -41,7 +41,7 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
         "Rules:\n"
         "- Decide which tool is most appropriate based on the user question and PDF status.\n"
         "- If the user wants a PDF summary, use summary_tool.\n"
-        "- Else, If is_upload == True, ALWAYS use qa_tool.\n"
+        "- Else, If PDF uploaded= True, ALWAYS USE qa_tool.\n"
         "- Else, use chat_tool.\n"
         "- Respond ONLY with a valid JSON object in this exact format:\n"
         "  {{'tool_name': '<tool_name>', 'args': {{}}}}\n"
