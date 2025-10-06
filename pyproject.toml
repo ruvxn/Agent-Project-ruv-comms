@@ -1,0 +1,31 @@
+[project]
+name = "agents"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "beautifulsoup4>=4.13.5",
+    "chromadb>=1.1.0",
+    "ddgs>=9.5.5",
+    "fastapi[standard]>=0.118.0",
+    "langchain>=0.3.27",
+    "langchain-ollama>=0.3.9",
+    "langchain-openai>=0.3.32",
+    "langgraph>=0.6.7",
+    "langgraph-checkpoint-sqlite>=2.0.11",
+    "langmem>=0.0.29",
+    "markdownify>=1.2.0",
+    "numpy>=2.3.2",
+    "ollama>=0.6.0",
+    "pyabsa>=2.4.2",
+    "pymupdf>=1.26.4",
+    "python-dotenv>=1.1.1",
+    "qdrant-client>=1.15.1",
+    "readability-lxml>=0.8.4.1",
+    "requests>=2.32.5",
+    "selenium>=4.35.0",
+    "sentence-transformers>=5.1.1",
+    "streamlit>=1.50.0",
+    "websockets>=15.0.1",
+]
