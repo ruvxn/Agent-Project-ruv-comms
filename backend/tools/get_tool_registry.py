@@ -1,0 +1,11 @@
+from backend.tools.chat_tool import chat_tool
+from backend.tools.qa_tool import qa_tool
+from backend.tools.summary_tool import summary_tool
+
+
+def get_tool_registry():
+    return {
+        "qa_tool": qa_tool(),
+        "chat_tool": chat_tool(),
+        "summary_tool": summary_tool(),
+    }
