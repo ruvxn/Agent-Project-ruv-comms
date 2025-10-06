@@ -63,3 +63,32 @@ def main():
             print(f"An error occurred: {e}")
             break
 
+"""
+                                                    #with st.expander("View Agent Thought Process"):
+                                                      # for actions in st.session_state.actions:
+                                                          # st.write(actions)
+                                                          
+                                                          
+                                                                               for event in graph.stream(
+
+                            input,
+                            config=st.session_state.config,
+                            stream_mode="updates"
+                    ):
+                        print("Streaming...")
+                        for node_name, value in event.items():
+                            if "messages" in value and value is not None:
+                                agent_msg = [m for m in value["messages"] if isinstance(m, AIMessage)]
+                                if agent_msg and agent_msg[-1].content:
+                                    # Update the last agent message with the actual response
+                                    st.session_state.messages[-1]["content"] = agent_msg[-1].content
+                            other_data = {k: v for k, v in value.items() if k != "messages"}
+                            for key, val in other_data.items():
+                               # st.write(f"{key}")
+                                #time.sleep(10)  # Simulate delay for streaming effect
+                               #print(f"{key}")
+                               # st.session_state.actions.append(f"{key}")
+
+                                if node_name == "__end__":
+                                    break
+                                                   """

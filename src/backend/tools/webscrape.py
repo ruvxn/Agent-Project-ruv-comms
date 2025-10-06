@@ -11,18 +11,22 @@ def save_webpage_as_pdf(title, content_md):
     text = f"{title}{content_md}"
     text_area = pymupdf.Rect(50, 50, 550, 800)
     doc = pymupdf.open()
-    while text:
+
+    while True:
         print("Creating PDF...")
         page = doc.new_page()
-        page.insert_textbox(
+        remaining_text = page.insert_textbox(
             text_area,
             f"{title}{content_md}",
             fontsize=12
         )
-        break  # Exit after one page for simplicity and testing at the moment
-    print("Saving PDF...")
+        if remaining_text:
+            break
+
     doc.save(f"src/storage/{title}.pdf")
     doc.close()
+    print("PDF saved successfully.")
+    return f"src/storage/{title}.pdf"
 
 
 class WebScrape(BaseTool):
@@ -38,13 +42,15 @@ class WebScrape(BaseTool):
             try:
                 response = requests.get(link, headers=headers)
                 if response.status_code != 200:
+                    print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
                     return f"Failed to retrieve the webpage. Status code: {response.status_code}"
 
                 soup = BeautifulSoup(response.content, 'lxml')
 
                 page_text = soup.get_text(separator='\n', strip=True)
+                print(page_text)
                 if page_text:
-                    save_webpage_as_pdf(soup.title.string, md(page_text))
+                    #path =  save_webpage_as_pdf(soup.title.string, md(page_text))
                     print(f"#{soup.title.string}\n\n{md(page_text)}")
                     return f"#{soup.title.string}\n\n{md(page_text)}"
                 else:

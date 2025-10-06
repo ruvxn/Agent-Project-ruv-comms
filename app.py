@@ -1,9 +1,10 @@
+import time
 from langchain_core.messages import HumanMessage, AIMessage
-
 from src.backend.agent.Agent import Agent
 from src.backend.tools.webscrape import WebScrape
 from src.backend.tools.websearch import WebSearch
 from src.backend.tools.memorytool import MemoryTool
+from src.backend.tools.date_time import DateTime
 import streamlit as st
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
@@ -17,25 +18,29 @@ def load_css():
 def load_message(messages, state):
     for message in messages["messages"]:
         if isinstance(message, HumanMessage):
-            state.append({"role": "user", "content": message.content})
+            if message.content:
+                state.append({"role": "user", "content": message.content})
         elif isinstance(message, AIMessage):
-            state.append({"role": "agent", "content": message.content})
+            if message.content:
+                state.append({"role": "agent", "content": message.content})
         else:
             continue
     return state
+
 
 def app():
     load_css()
     st.set_page_config(layout="wide")
     st.title("Agent")
-    if "config" not in st.session_state or "agent" not in st.session_state:
+    if "config" not in st.session_state:
         id = random.randint(1000, 10000)
-        st.session_state.config = {"configurable": {"thread_id": id}}
-       # """thread id is used for concurrency and state management for the agent however there is no way to save this on the client side yet so conversations will be lost"""
+        st.session_state.config = {"configurable": {"thread_id": "3"}}
+       #"""thread id is used for concurrency and state management for the agent however there is no way to save this on the client side yet so conversations will be lost"""
         websearch = WebSearch()
         webscrape = WebScrape()
+        datetime = DateTime()
        #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
-        tools = [websearch, webscrape]
+        tools = [websearch, webscrape, datetime]
         st.session_state.messages = []
         st.session_state.agent = Agent(tools=tools, name="WebAgent")
         with sqlite3.connect('src/backend/db/WebAgent.db', check_same_thread=False) as conn:
@@ -62,28 +67,22 @@ def app():
             with st.chat_message(user_input):
                 st.markdown(f'<div class="user-message-container"><div class="user-message">{user_input}</div></div>', unsafe_allow_html=True)
             graph = st.session_state.agent.graph_builder()
-
+            print("graph built")
             input = {"messages": [HumanMessage(content=user_input)]}
+
             try:
-                with st.spinner("Processing..."):
-                    for event in graph.stream(
-                        input,
-                        config=st.session_state.config ,
-                        stream_mode="updates"
-                    ):
-                        for node_name, value in event.items():
-                            if "messages" in value and value is not None:
-                                st.session_state.messages = load_message(value, st.session_state.messages)
-                            if node_name == "__end__":
-                                break
-                for msg in st.session_state.messages:
-                    with st.chat_message(msg.get("role")):
-                        if msg.get("role") == "agent":
-                            st.markdown(f'<div class="agent-message-container"><div class="agent-message">{msg["content"]}</div></div>', unsafe_allow_html=True)
-                        else:
-                            continue
+                 with st.spinner("Agent is thinking..."):
+                     print("Agent is thinking...")
+                     final_state = graph.invoke(input=input, config=st.session_state.config)
+                     load_message(final_state, st.session_state.messages)
+                     msg = final_state["messages"][-1].content
+
+                     with st.chat_message("agent"):
+                            st.markdown(
+                                f'<div class="agent-message-container"><div class="agent-message">{msg}</div></div>',
+                                unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"An error occurred: {e}")
+                st.error(f"An error occurred: here {e}")
         else:
             st.warning("Please enter a query.")
 
