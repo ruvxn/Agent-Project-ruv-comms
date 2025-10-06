@@ -29,7 +29,7 @@ class Agent:
             )
         #self.store = QdrantStore(collection_name="WebAgent") #don't uncomment if you don't have qdrant running
 
-    async def run(self, user_input: str):
+    def run(self, user_input: str):
         """Method to run the agent/interact with the agent requires user input"""
         #Shows the final message from the LLM
         with sqlite3.connect(f"{self.name}.db") as conn:
@@ -45,7 +45,7 @@ class Agent:
             return final_state["messages"][-1].content
 
 
-    async def planner(self, state: State):
+    def planner(self, state: State):
         state["tools"] = self.tools
 
         planner_messages =  [("user", f"{state["messages"][-1].content}")] + [
@@ -61,7 +61,7 @@ class Agent:
 
         return state
 
-    async def chat(self, state: State):
+    def chat(self, state: State):
         system_prompt = (
             "You are a helpful assistant. Your goal is to answer the user's request by following the plan.\n"
             "1. First, decide if you need to call a tool to execute the current step of the plan.\n"
@@ -77,7 +77,7 @@ class Agent:
         return {"messages":[ai_response]}
 
 
-    async def critique(self, state: State):
+    def critique(self, state: State):
         critique_prompt = (
             "You are an expert critic, review the proposed final answer answer to the original user request."
             "Is the answer complete, accurate, and does it fully address the user's query?"
@@ -90,21 +90,21 @@ class Agent:
             ("system", critique_prompt)
         ]
 
-        critique = self.llm_openai_tools.invoke(critique_message).content
+        critique = "yes" #self.llm_openai_tools.invoke(critique_message).content
         print(f' \nPrinting critique: \n {critique}')
         if "yes" in critique.lower():
             return {'critique':'None'}
         else:
             return {'critique': critique}
 
-    async def route_tools(self, state: State):
+    def route_tools(self, state: State):
         ai_message = state["messages"][-1]
         if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
             return "tools"
         return "critique"
 
 
-    async def should_continue(self, state: State):
+    def should_continue(self, state: State):
         if state.get("critique") and state["critique"] != "None":
             return "chatbot"
         else:
@@ -112,7 +112,7 @@ class Agent:
             # self.store.put(extracted_memory)
             return END
 
-    async def should_communicate(self, state: State):
+    def should_communicate(self, state: State):
         planner_messages = [("plan", f"{state["plan"]}")] + [("user", f"{state["messages"][-1].content}")] + [
             (
                 "system",
@@ -126,16 +126,24 @@ class Agent:
         if communicate == "continue":
             return "chatbot"
         else:
-            return "communicate"
+            return "chatbot"
 
-    async def communicate(self, state: State):
-        uri = "ws://localhost:8765"
+    def communicate(self, state: State):
+
+
+         return "Unable to communicate"
+         """
+          uri = "ws://localhost:8765"
         async with websockets.connect(uri) as websocket:
             await websocket.send(state["messages"][-1].content)
             response = await websocket.recv()
             return {"messages": [HumanMessage(content=response)]}
+         """
 
-    async def graph_builder(self):
+
+
+
+    def graph_builder(self):
         graph_builder = StateGraph(State)
         graph_builder.add_node("planner", self.planner)
         graph_builder.add_node("should_communicate", self.should_communicate)
@@ -143,7 +151,7 @@ class Agent:
         tool_node = ToolNode(tools=self.tools)
         graph_builder.add_node("tools", tool_node)
         graph_builder.add_node("critique", self.critique)
-
+        graph_builder.add_node("communicate", self.communicate)
         graph_builder.add_edge(START, "planner")
         graph_builder.add_edge("planner", "chatbot")
         graph_builder.add_edge("tools", "chatbot")
@@ -153,6 +161,8 @@ class Agent:
             self.route_tools,
             {"tools": "tools", "critique": "critique"},
         )
+
+
         graph_builder.add_conditional_edges(
             "critique",
             self.should_continue,

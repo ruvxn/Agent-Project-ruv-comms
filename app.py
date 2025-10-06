@@ -4,6 +4,7 @@ from src.backend.agent.Agent import Agent
 from src.backend.tools.webscrape import WebScrape
 from src.backend.tools.websearch import WebSearch
 from src.backend.tools.memorytool import MemoryTool
+from src.backend.tools.date_time import DateTime
 import streamlit as st
 from langgraph.checkpoint.sqlite import SqliteSaver
 import sqlite3
@@ -25,9 +26,7 @@ def load_message(messages, state):
         else:
             continue
     return state
-"""
 
-"""
 
 def app():
     load_css()
@@ -36,13 +35,13 @@ def app():
     if "config" not in st.session_state:
         id = random.randint(1000, 10000)
         st.session_state.config = {"configurable": {"thread_id": "3"}}
-       # """thread id is used for concurrency and state management for the agent however there is no way to save this on the client side yet so conversations will be lost"""
+       #"""thread id is used for concurrency and state management for the agent however there is no way to save this on the client side yet so conversations will be lost"""
         websearch = WebSearch()
         webscrape = WebScrape()
+        datetime = DateTime()
        #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
-        tools = [websearch, webscrape]
+        tools = [websearch, webscrape, datetime]
         st.session_state.messages = []
-        st.session_state.actions = []
         st.session_state.agent = Agent(tools=tools, name="WebAgent")
         with sqlite3.connect('src/backend/db/WebAgent.db', check_same_thread=False) as conn:
             memory = SqliteSaver(conn)
@@ -68,43 +67,22 @@ def app():
             with st.chat_message(user_input):
                 st.markdown(f'<div class="user-message-container"><div class="user-message">{user_input}</div></div>', unsafe_allow_html=True)
             graph = st.session_state.agent.graph_builder()
-
+            print("graph built")
             input = {"messages": [HumanMessage(content=user_input)]}
+
             try:
-                #with st.title("Agent is thinking..."):
-                    for event in graph.stream(
-                            input,
-                            config=st.session_state.config,
-                            stream_mode="updates"
-                    ):
-                        status_placeholder = st.empty()
-                        with status_placeholder.status("Agent is thinking...", expanded=False):
-                            for node_name, value in event.items():
-                                if "messages" in value and value is not None:
-                                    agent_msg = [m for m in value["messages"] if isinstance(m, AIMessage)]
-                                    if agent_msg and agent_msg[-1].content:
-                                        # Update the last agent message with the actual response
-                                        st.session_state.messages[-1]["content"] = agent_msg[-1].content
-                                other_data = {k: v for k, v in value.items() if k != "messages"}
-                                for key, val in other_data.items():
-                                    st.write(f"{key}")
-                                    time.sleep(10)  # Simulate delay for streaming effect
-                                    print(f"{key}")
-                                    st.session_state.actions.append(f"{key}")
+                 with st.spinner("Agent is thinking..."):
+                     print("Agent is thinking...")
+                     final_state = graph.invoke(input=input, config=st.session_state.config)
+                     load_message(final_state, st.session_state.messages)
+                     msg = final_state["messages"][-1].content
 
-                                    if node_name == "__end__":
-                                        break
-                        status_placeholder.empty()
-                    msg = st.session_state.messages[-1]
-                    with st.expander("View Agent Thought Process"):
-                        for actions in st.session_state.actions:
-                            st.write(actions)
-
-                    with st.chat_message(msg.get("role")):
-                        if msg.get("role") == "agent":
-                            st.markdown(f'<div class="agent-message-container"><div class="agent-message">{msg["content"]}</div></div>', unsafe_allow_html=True)
+                     with st.chat_message("agent"):
+                            st.markdown(
+                                f'<div class="agent-message-container"><div class="agent-message">{msg}</div></div>',
+                                unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"An error occurred: {e}")
+                st.error(f"An error occurred: here {e}")
         else:
             st.warning("Please enter a query.")
 
