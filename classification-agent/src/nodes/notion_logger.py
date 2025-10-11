@@ -28,7 +28,9 @@ def _sha12(text: str) -> str:
 def _props_from_enriched(e: EnrichedError, hash_value: str) -> Dict[str, Any]:
     review = e.review
     err = e.error
-    return {
+
+    # Base properties (always included)
+    props = {
         "ReviewID":     {"title":     [{"text": {"content": review.review_id}}]},
         "Reviewer":     {"rich_text": [{"text": {"content": getattr(review, "reviewer_name", "")}}]},
         "Date":         {"date":      {"start": str(getattr(review, "date", "")) or None}},
@@ -39,6 +41,34 @@ def _props_from_enriched(e: EnrichedError, hash_value: str) -> Dict[str, Any]:
         "Rationale":    {"rich_text": [{"text": {"content": err.rationale[:1900]}}]},
         "Hash":         {"rich_text": [{"text": {"content": hash_value}}]},
     }
+
+    # Add sentiment fields if sentiment data exists
+    if e.sentiment_data:
+        try:
+            sentiment_props = {
+                "OverallSentiment": {
+                    "select": {"name": e.sentiment_data.overall_sentiment}
+                },
+                "SentimentScore": {
+                    "number": round(e.sentiment_data.overall_confidence, 3)
+                },
+                "SentimentPolarity": {
+                    "number": round(e.sentiment_data.sentiment_polarity, 3)
+                },
+                "SentimentInfluenced": {
+                    "checkbox": e.sentiment_influenced_criticality
+                },
+                "Rating": {
+                    "number": review.rating
+                },
+            }
+            props.update(sentiment_props)
+        except Exception as ex:
+            # Gracefully skip if Notion DB doesn't have these fields yet
+            print(f"Warning: Could not add sentiment fields to Notion: {ex}")
+            print(f"Make sure your Notion database has the sentiment properties configured")
+
+    return props
 
 
 def _find_page_by_hash(hash_value: str) -> Optional[str]:

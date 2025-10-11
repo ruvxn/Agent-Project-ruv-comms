@@ -8,8 +8,9 @@ from src.nodes.load_reviews import load_reviews
 from src.database import load_unprocessed_reviews, mark_reviews_processed, get_processing_stats
 from src.nodes.detect_errors import detect_errors_with_ollama
 from src.nodes.normalize import normalize
-from src.utils import RawReview, DetectedError, EnrichedError
+from src.utils import RawReview, DetectedError, EnrichedError, SentimentData
 from src.nodes.notion_logger import upsert_enriched_error
+from src.nodes.sentiment_analysis import analyze_review_sentiment
 
 
 def _sha12(text: str) -> str:
@@ -50,11 +51,43 @@ def build_graph() -> Graph:
             pairs.append((r, errs))
         return pairs
 
-    #normalise and classify based on severity
-    def n_normalize(pairs: List[Tuple[RawReview, List[DetectedError]]]) -> List[EnrichedError]:
+    #analyze sentiment for each review
+    def n_sentiment(pairs: List[Tuple[RawReview, List[DetectedError]]]) -> List[Tuple[RawReview, List[DetectedError], SentimentData]]:
+        """
+        Enrich error pairs with sentiment analysis.
+
+        INPUT: List[Tuple[RawReview, List[DetectedError]]]
+        OUTPUT: List[Tuple[RawReview, List[DetectedError], SentimentData]]
+        """
+        # Check if sentiment is enabled
+        if os.getenv("ENABLE_SENTIMENT", "true").lower() == "false":
+            # Return with dummy sentiment data
+            print("Sentiment analysis disabled (ENABLE_SENTIMENT=false)")
+            return [(r, errs, SentimentData(
+                review_id=r.review_id,
+                overall_sentiment="Neutral",
+                overall_confidence=0.0,
+                sentiment_polarity=0.0
+            )) for r, errs in pairs]
+
+        print(f"Analyzing sentiment for {len(pairs)} reviews...")
+        enriched = []
+
+        for idx, (review, errors) in enumerate(pairs, 1):
+            sentiment = analyze_review_sentiment(review)
+            enriched.append((review, errors, sentiment))
+
+            if idx % 10 == 0:
+                print(f"  ... {idx}/{len(pairs)} analyzed")
+
+        print("Sentiment analysis complete")
+        return enriched
+
+    #normalise and classify based on severity (now with sentiment)
+    def n_normalize(enriched_pairs: List[Tuple[RawReview, List[DetectedError], SentimentData]]) -> List[EnrichedError]:
         out: List[EnrichedError] = []
-        for r, errs in pairs:
-            out.extend(normalize(r, errs))
+        for review, errors, sentiment in enriched_pairs:
+            out.extend(normalize(review, errors, sentiment))
         return out
 
     #write to Notion and mark as processed
@@ -92,12 +125,14 @@ def build_graph() -> Graph:
     # Nodes
     g.add_node("load", n_load)
     g.add_node("detect", n_detect)
+    g.add_node("sentiment", n_sentiment)  # Sentiment analysis node
     g.add_node("normalize", n_normalize)
     g.add_node("tee", n_tee)
 
-    # Edges 
+    # Edges - Sequential flow with sentiment between detect and normalize
     g.add_edge("load", "detect")
-    g.add_edge("detect", "normalize")
+    g.add_edge("detect", "sentiment")      # detect -> sentiment
+    g.add_edge("sentiment", "normalize")   # sentiment -> normalize
     g.add_edge("normalize", "tee")
 
     # Entry & finish

@@ -10,6 +10,7 @@ This system processes customer reviews from CSV files, uses local LLM (Ollama) t
 
 - **Automated Issue Detection**: Uses LLM to extract actionable problems from customer reviews
 - **Smart Classification**: Categorizes issues by type (Crash, Billing, Auth, API, Performance, etc.) and severity (Critical, Major, Minor, Suggestion)
+- **Sentiment-Aware Criticality**: Analyzes review sentiment to adjust issue severity (NEW!)
 - **Deduplication**: Prevents duplicate issue tracking using content-based hashing
 - **Notion Integration**: Automatically logs issues to Notion database for team collaboration
 - **Fallback Detection**: Keyword-based detection ensures critical issues aren't missed
@@ -20,8 +21,15 @@ This system processes customer reviews from CSV files, uses local LLM (Ollama) t
 Built using **LangGraph** for workflow orchestration with the following pipeline:
 
 ```
-CSV Data → Load Reviews → Detect Errors (LLM) → Normalize & Classify → Log to Notion
+CSV Data → Load Reviews → Detect Errors (LLM) → Sentiment Analysis → Normalize & Classify → Log to Notion
 ```
+
+**Sentiment Analysis Integration:**
+- Uses DeBERTa transformer model for accurate sentiment detection
+- Adjusts criticality based on sentiment polarity and customer rating
+- Strong negative sentiment + Major issue → Critical
+- Low rating (≤2 stars) + Major issue → Critical
+- Strong positive sentiment + Minor issue → Suggestion
 
 ## Installation
 
@@ -59,6 +67,12 @@ DATA_PATH=./data/tech_service_reviews_500_with_names_ratings.csv
 # LLM Configuration
 OLLAMA_MODEL=llama3.2
 
+# Sentiment Analysis (NEW!)
+ENABLE_SENTIMENT=true
+SENTIMENT_MODEL=yangheng/deberta-v3-base-absa-v1.1
+SENTIMENT_CONFIDENCE_THRESHOLD=0.8
+SENTIMENT_BOOST_THRESHOLD=-0.85
+
 # Notion Integration
 NOTION_API_KEY=your_notion_api_key_here
 NOTION_DATABASE_ID=your_notion_database_id_here
@@ -70,6 +84,8 @@ NOTION_DRY_RUN=0
 ### Notion Database Setup
 
 Create a Notion database with these properties:
+
+**Required Properties:**
 - **ReviewID** (Title)
 - **Reviewer** (Rich Text)
 - **Date** (Date)
@@ -79,6 +95,15 @@ Create a Notion database with these properties:
 - **Criticality** (Select with options: Critical, Major, Minor, Suggestion, None)
 - **Rationale** (Rich Text)
 - **Hash** (Rich Text)
+
+**Sentiment Analysis Properties (NEW - Optional but Recommended):**
+- **OverallSentiment** (Select with options: Positive, Negative, Neutral)
+- **SentimentScore** (Number: format 0.00 to 1.00)
+- **SentimentPolarity** (Number: format -1.00 to 1.00)
+- **SentimentInfluenced** (Checkbox) - Indicates if sentiment changed the criticality
+- **Rating** (Number: 1-5 stars)
+
+> **Note:** The agent will work without sentiment properties but will print warnings. Add them for full functionality.
 
 ## Usage
 

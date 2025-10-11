@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Literal
+from typing import List, Literal, Optional
 import hashlib
 
 Criticality = Literal["Critical", "Major", "Minor", "Suggestion", "None"]
@@ -20,12 +20,24 @@ class DetectedError(BaseModel):
     error_type: List[str] = Field(default_factory=list)
     rationale: str
 
+# Sentiment analysis data
+class SentimentData(BaseModel):
+    """Complete sentiment analysis for a review"""
+    review_id: str
+    overall_sentiment: str  # positive, negative or neutral
+    overall_confidence: float  # 0.0-1.0
+    sentiment_polarity: float  # -1.0 to +1.0
+
 # normalised error - ready to log
 class EnrichedError(BaseModel):
     review: RawReview
     error: DetectedError
     criticality: Criticality
     error_hash: str
+
+    #Sentiment enrichment
+    sentiment_data: Optional[SentimentData] = None
+    sentiment_influenced_criticality: bool = False
 
 #deduplication
 def hash_error(review_id: str, summary: str) -> str:
