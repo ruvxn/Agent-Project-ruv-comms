@@ -1,14 +1,13 @@
 from attr import asdict
 import streamlit
-
 from backend.model.states.GraphState import GraphState
 import fitz
 import os
-import dotenv
+from dotenv import load_dotenv
 from backend.model.states.qa_state.PdfTextClass import Meta, PdfTextClass
 from backend.utils import single_chunk_summary, get_chunk, clean_text, log_decorator
 
-dotenv.load_dotenv()
+load_dotenv()
 
 PDF_PATH = os.getenv("PDF_PATH")
 PDF_NAME = os.path.splitext(os.path.basename(PDF_PATH))[0]

@@ -70,6 +70,7 @@ def render_config_sidebar(state: GraphState, config_tab) -> GraphState:
                 "CHUNK_OVERLAP": st.session_state["CHUNK_OVERLAP"],
                 "TOP_K": st.session_state["TOP_K"],
                 "RAG_THRESHOLD": st.session_state["RAG_THRESHOLD"],
+                "SUMMARY_MIN_LENGTH": st.session_state["SUMMARY_MIN_LENGTH"],
                 "SUMMARY_MAX_LENGTH": st.session_state["SUMMARY_MAX_LENGTH"],
                 "SUMMARY_CHUNK_SIZE": st.session_state["SUMMARY_CHUNK_SIZE"],
                 "SUMMARY_CHUNK_OVERLAP": st.session_state["SUMMARY_CHUNK_OVERLAP"],
@@ -89,8 +90,10 @@ def render_config_sidebar(state: GraphState, config_tab) -> GraphState:
             "RAG_THRESHOLD", key="RAG_THRESHOLD", min_value=0.00, max_value=1.00, value=state.graph_config.RAG_THRESHOLD)
         TOP_K = st.number_input("TOP_K", key="TOP_K", min_value=1,
                                 max_value=50, value=state.graph_config.TOP_K)
+        SUMMARY_MIN_LENGTH = st.number_input(
+            "SUMMARY_MIN_LENGTH", key="SUMMARY_MIN_LENGTH", min_value=500, max_value=800, value=state.graph_config.SUMMARY_MIN_LENGTH)
         SUMMARY_MAX_LENGTH = st.number_input(
-            "SUMMARY_MAX_LENGTH", key="SUMMARY_MAX_LENGTH", min_value=50, max_value=300, value=state.graph_config.SUMMARY_MAX_LENGTH)
+            "SUMMARY_MAX_LENGTH", key="SUMMARY_MAX_LENGTH", min_value=800, max_value=1000, value=state.graph_config.SUMMARY_MAX_LENGTH)
 
         SUMMARY_CHUNK_SIZE = st.number_input(
             "SUMMARY_CHUNK_SIZE", key="SUMMARY_CHUNK_SIZE", min_value=100, max_value=5000, value=state.graph_config.SUMMARY_CHUNK_SIZE)

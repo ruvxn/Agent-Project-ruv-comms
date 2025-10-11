@@ -3,10 +3,11 @@ from copy import deepcopy
 import json
 import re
 import os
+from typing import Optional
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
-# from transformers import pipeline
+import numpy as np
 from functools import wraps
 import streamlit as st
 from transformers import pipeline
@@ -23,9 +24,12 @@ summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
 def log_decorator(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
-        state = None
+        state = kwargs.get("state") or getattr(st.session_state, "state", None)
+
+        if state is None:
+            state = GraphState()
+            st.session_state.state = state
         try:
-            state = st.session_state.state
             if hasattr(state, "logs") and state.logs is not None:
                 state.logs.append(f"[{function.__name__}] called")
             return function(*args, **kwargs)
@@ -51,8 +55,16 @@ def get_embedding(chunk: str):
         chunk = [chunk]
     embed_model = load_model()
     embed_result = embed_model.encode(
-        chunk, show_progress_bar=True)
-    return embed_result
+        chunk, show_progress_bar=True, normalize_embeddings=True)
+    return normalize_vector(embed_result)
+
+
+def normalize_vector(vec: list[float]) -> list[float]:
+    arr = np.array(vec)
+    norm = np.linalg.norm(arr)
+    if norm == 0:
+        return arr.tolist()
+    return (arr / norm).tolist()
 
 
 @st.cache_resource
@@ -61,17 +73,19 @@ def load_model():
 
 
 @log_decorator
-def single_chunk_summary(single_chunk: str) -> str:
+def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_len: Optional[int] = None) -> str:
     single_chunk_len = len(single_chunk.split())
-    max_new = max(1, single_chunk_len // 2)
-    min_len = min(50, single_chunk_len)
+    max_new = max_len if max_len else max(1, single_chunk_len // 2)
+    min_len = min_len if min_len else min(50, single_chunk_len)
     summary = summary_pipeline(
         single_chunk,
         max_new_tokens=max_new,
         min_length=min_len,
         do_sample=False
     )
-    return summary[0]["summary_text"].replace("\xa0", " ")
+    if summary and "summary_text" in summary[0]:
+        return summary[0]["summary_text"].replace("\xa0", " ")
+    return ""
 
 
 @log_decorator

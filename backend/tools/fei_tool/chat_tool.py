@@ -17,16 +17,15 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 class chat_tool(BaseTool):
     """Respond to user queries"""
 
-    def invoke(self, arg: dict) -> ToolReturnClass:
+    def invoke(self, args: dict) -> ToolReturnClass:
         user_input = get_user_input()
-        state: GraphState = arg["state"]
+        state: GraphState = args["state"]
 
         if user_input:
             response = chat(
                 OLLAMA_MODEL, [{"role": "user", "content": user_input}])
 
         state.messages.append(AIMessage(content=response.message.content))
-
         return ToolReturnClass(
             state=state,
             agent_response=state.messages.ai_response_list[-1].content if state.messages.ai_response_list else "No response",

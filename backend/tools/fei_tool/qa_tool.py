@@ -13,9 +13,13 @@ class qa_tool(BaseTool):
         super().__init__()
         self.subgraph = build_qa_graph()
 
-    def invoke(self, arg: dict) -> ToolReturnClass:
-        state: GraphState = arg["state"]
-        qa_state: GraphState = self.subgraph.invoke(state)
+    def invoke(self, args: dict) -> ToolReturnClass:
+        state: GraphState = args["state"]
+        state_for_invoke = state.copy()
+        state_for_invoke.qa_state = state.qa_state.dict()
+        state_for_invoke.graph_config = state.graph_config.dict()
+        qa_state: GraphState = self.subgraph.invoke(
+            state_for_invoke)
         if isinstance(qa_state, dict):
             qa_state = GraphState(**qa_state)
         return ToolReturnClass(

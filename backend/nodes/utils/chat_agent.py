@@ -18,8 +18,8 @@ def chat_agent(state: GraphState) -> GraphState:
     user_input = get_user_input()
 
     system_prompt = "You are an assistant."
-    if getattr(state.qa_state, "final_summary", None):
-        system_prompt += f"\nReference PDF Summary:\n{state.qa_state.final_summary}"
+    if getattr(state.summary_state, "final_summary", None):
+        system_prompt += f"\nReference PDF Summary:\n{state.summary_state.final_summary}"
 
     if user_input:
         response = chat(
