@@ -82,7 +82,7 @@ class GraphState(BaseModel):
 You can then access and modify them inside your tool:
 
 ```python
-state.user_profile["name"] = "John"
+state.user_profile.name = "John"
 ```
 
 ✅ This is safe — Streamlit automatically stores it inside `st.session_state.state`,
