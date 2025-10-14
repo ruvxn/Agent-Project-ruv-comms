@@ -4,12 +4,12 @@ import os
 import tempfile
 from dotenv import load_dotenv
 import streamlit as st
-from backend.model.states.GraphState import GraphState
+from backend.model.states.StateManager import StateManager
+from backend.model.states.graph_state.GraphState import GraphState
 from langchain_core.messages import HumanMessage, AIMessage
-from backend.pipeline.get_graph import get_graph
+from backend.graph.get_graph import get_graph
 from langsmith import traceable
 
-from backend.pipeline.get_graph import get_graph
 
 load_dotenv()
 
@@ -20,8 +20,7 @@ FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
 def render_main_section(state: GraphState) -> GraphState:
     st.title("PDF Agent")
 
-    state = st.session_state.state
-    render_file_uploader(state)
+    state = render_file_uploader(state)
 
     if not getattr(state.messages, "message_placeholder", None):
         state.messages.message_placeholder = st.session_state.message_placeholder
@@ -33,20 +32,23 @@ def render_main_section(state: GraphState) -> GraphState:
         placeholder = st.empty()
         placeholder.markdown("[AI is thinking...]")
         compiled_graph = get_graph(state)
-        state_for_invoke = state.copy()
-        state_for_invoke.qa_state = state.qa_state.dict()
-        state_for_invoke.graph_config = state.graph_config.dict()
-        compiled_graph.invoke(state_for_invoke)
+        state_for_invoke = state
+        # compiled_graph.invoke(state_for_invoke,  config={
+        #     "thread_id": "123",
+        #     "checkpoint_ns": "graph_ns",
+        #     "checkpoint_id": "checkpoint_1"
+        # })
+        new_state = compiled_graph.invoke(state_for_invoke)
         placeholder.markdown(" ")
-
-    return state
+        StateManager.update_state(new_state)
+    return StateManager.get_state()
 
 
 def render_sidebar(state: GraphState) -> GraphState:
     with st.sidebar:
         log_tab, config_tab = st.tabs(["Logs", "Configs"])
         render_log_side_bar(state, log_tab)
-        state = render_config_sidebar(state, config_tab)
+        render_config_sidebar(state, config_tab)
     return state
 
 
@@ -76,12 +78,15 @@ def render_config_sidebar(state: GraphState, config_tab) -> GraphState:
                 "SUMMARY_CHUNK_OVERLAP": st.session_state["SUMMARY_CHUNK_OVERLAP"],
                 "SHOW_LOG": st.session_state["SHOW_LOG"]
             })
-            st.session_state.state = GraphState(graph_config=new_config)
-            st.session_state.state.logs.append("Graph has been reset.")
+            new_state = GraphState(graph_config=new_config)
+            new_state.logs.append("Graph has been reset.")
+            StateManager.update_state(new_state)
             if "file_uploader" in st.session_state:
                 del st.session_state["file_uploader"]
             st.rerun()
 
+        SEARCH_ALL_COLLECTION = st.checkbox(
+            "SEARCH_ALL_COLLECTION", False, key="SEARCH_ALL_COLLECTION")
         CHUNK_SIZE = st.number_input(
             "CHUNK_SIZE", key="CHUNK_SIZE", min_value=200, max_value=1000, value=state.graph_config.CHUNK_SIZE)
         CHUNK_OVERLAP = st.number_input(
@@ -91,9 +96,9 @@ def render_config_sidebar(state: GraphState, config_tab) -> GraphState:
         TOP_K = st.number_input("TOP_K", key="TOP_K", min_value=1,
                                 max_value=50, value=state.graph_config.TOP_K)
         SUMMARY_MIN_LENGTH = st.number_input(
-            "SUMMARY_MIN_LENGTH", key="SUMMARY_MIN_LENGTH", min_value=500, max_value=800, value=state.graph_config.SUMMARY_MIN_LENGTH)
+            "SUMMARY_MIN_LENGTH", key="SUMMARY_MIN_LENGTH", min_value=500, max_value=1500, value=state.graph_config.SUMMARY_MIN_LENGTH)
         SUMMARY_MAX_LENGTH = st.number_input(
-            "SUMMARY_MAX_LENGTH", key="SUMMARY_MAX_LENGTH", min_value=800, max_value=1000, value=state.graph_config.SUMMARY_MAX_LENGTH)
+            "SUMMARY_MAX_LENGTH", key="SUMMARY_MAX_LENGTH", min_value=800, max_value=2000, value=state.graph_config.SUMMARY_MAX_LENGTH)
 
         SUMMARY_CHUNK_SIZE = st.number_input(
             "SUMMARY_CHUNK_SIZE", key="SUMMARY_CHUNK_SIZE", min_value=100, max_value=5000, value=state.graph_config.SUMMARY_CHUNK_SIZE)
@@ -110,14 +115,13 @@ def render_file_uploader(state: GraphState) -> GraphState:
             temp_file.write(file_uploader.read())
             temp_file.flush()
             state.qa_state.pdf_path = temp_file.name
-            state.qa_state.pdf_name = temp_file.name.split(".")[0]
+            state.qa_state.pdf_name = file_uploader.name
 
         state.qa_state.is_upload = True
     else:
         state.qa_state.is_upload = False
         state.qa_state.is_processed = False
 
-    state.logs.append(f"is_upload: {state.qa_state.is_upload}")
     return state
 
 
