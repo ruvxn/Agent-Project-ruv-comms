@@ -1,11 +1,11 @@
 from langgraph.graph import StateGraph, START, END
-from backend.model.states.GraphState import GraphState
+from backend.model.states.graph_state.GraphState import GraphState
 from backend.nodes.utils.chat_agent import chat_agent
 from backend.nodes.qa_node.no_kb_agent import no_kb_agent
 from backend.nodes.qa_node.rag_agent import rag_agent
-from backend.pipeline.qa_tool.get_pdf_ready_pipeline import get_pdf_ready_pipeline
-from backend.pipeline.qa_tool.rag_router import rag_router
-from backend.pipeline.qa_tool.upload_check_router import upload_check_router
+from backend.graph.qa_graph.get_pdf_ready_pipeline import get_pdf_ready_pipeline
+from backend.graph.qa_graph.rag_router import rag_router
+from backend.graph.qa_graph.upload_check_router import upload_check_router
 
 
 def build_qa_graph():

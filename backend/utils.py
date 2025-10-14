@@ -11,8 +11,9 @@ import numpy as np
 from functools import wraps
 import streamlit as st
 from transformers import pipeline
+from backend.model.states.StateManager import StateManager
 
-from backend.model.states.GraphState import GraphState
+from backend.model.states.graph_state.GraphState import GraphState
 
 load_dotenv()
 
@@ -27,8 +28,7 @@ def log_decorator(function):
         state = kwargs.get("state") or getattr(st.session_state, "state", None)
 
         if state is None:
-            state = GraphState()
-            st.session_state.state = state
+            state = StateManager.get_state()
         try:
             if hasattr(state, "logs") and state.logs is not None:
                 state.logs.append(f"[{function.__name__}] called")
@@ -40,13 +40,12 @@ def log_decorator(function):
 
 
 @log_decorator
-def get_chunk(data: str, state: GraphState) -> list[str]:
+def get_chunk(data: str, chunk_size: int, chunk_overlap: int) -> list[str]:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=state.graph_config.CHUNK_SIZE,
-        chunk_overlap=state.graph_config.CHUNK_OVERLAP
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap
     )
-    chunks = splitter.split_text(data)
-    return chunks
+    return splitter.split_text(data)
 
 
 @log_decorator
@@ -101,7 +100,6 @@ def clean_text(text: str) -> str:
 
 
 def get_user_input() -> str:
-    state = st.session_state.state
-    user_input = state.messages.user_query_list[-1].content if len(
-        state.messages.user_query_list) > 0 else None
+    state = StateManager.get_state()
+    user_input = state.messages.user_query_list[-1].content if state.messages.user_query_list else None
     return user_input

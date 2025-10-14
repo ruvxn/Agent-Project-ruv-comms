@@ -1,5 +1,5 @@
 from attr import dataclass
-from backend.model.states.GraphState import GraphState
+from backend.model.states.graph_state.GraphState import GraphState
 from backend.model.states.tool_state.ToolMetaDict import ToolMetaDict
 
 

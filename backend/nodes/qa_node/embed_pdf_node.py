@@ -1,11 +1,10 @@
 
 import streamlit
-from backend.model.states.GraphState import GraphState
+from backend.model.states.graph_state.GraphState import GraphState
 from backend.utils import get_embedding
 
 
 def embed_pdf_node(state: GraphState):
-    state = streamlit.session_state.state
     if state.qa_state.chunked_pdf_text is None:
         state.logs.append("No chunk found, skipping.")
         return state

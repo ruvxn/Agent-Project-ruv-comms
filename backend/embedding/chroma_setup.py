@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
 import streamlit
-from backend.model.states.GraphState import GraphState
+from backend.model.states.graph_state.GraphState import GraphState
 from backend.utils import get_embedding, log_decorator
 
 load_dotenv()
@@ -16,7 +16,6 @@ PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
 @log_decorator
 def get_or_create_collection(state: GraphState):
-    state = streamlit.session_state.state
     pdf_name = state.qa_state.pdf_name
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
@@ -35,7 +34,6 @@ def get_or_create_collection(state: GraphState):
 
 @log_decorator
 def get_all_collection_name(state: GraphState):
-    state = streamlit.session_state.state
     client = PersistentClient(path=CHROMA_PATH)
     collections = client.list_collections()
     collection_names_list = [c.name for c in collections]
@@ -43,8 +41,7 @@ def get_all_collection_name(state: GraphState):
 
 
 @log_decorator
-def get_or_create_summary_collection():
-    state = streamlit.session_state.state
+def get_or_create_summary_collection(state: GraphState):
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
 
@@ -73,8 +70,7 @@ def get_collection(collection_name: str):
 
 
 @log_decorator
-def insert_chunks(state: GraphState) -> GraphState:
-    state = streamlit.session_state.state
+def insert_chunks(state: GraphState):
     collection = get_or_create_collection(state)
 
     total_chunk = len(state.qa_state.chunked_pdf_text)
@@ -101,8 +97,6 @@ def insert_chunks(state: GraphState) -> GraphState:
 
         state.logs.append(
             f"Inserted {i+1}/{total_chunk} chunk into Chroma.")
-
-    return state
 
 
 @log_decorator

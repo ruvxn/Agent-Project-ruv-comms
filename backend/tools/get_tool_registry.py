@@ -1,6 +1,6 @@
-from backend.tools.fei_tool.chat_tool import chat_tool
-from backend.tools.fei_tool.qa_tool import qa_tool
-from backend.tools.fei_tool.summary_tool import summary_tool
+from backend.tools.bind_tool.chat_tool import chat_tool
+from backend.tools.bind_tool.qa_tool import qa_tool
+from backend.tools.bind_tool.summary_tool import summary_tool
 
 
 def get_tool_registry():
@@ -12,7 +12,6 @@ def get_tool_registry():
             "priority": 1,
             "condition": lambda state, user_input: (
                 state.qa_state.is_upload
-                and not any(kw in user_input.lower() for kw in ["summary", "abstract", "overview"])
             ),
         },
         "summary_tool": {

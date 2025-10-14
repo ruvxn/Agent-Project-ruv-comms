@@ -25,3 +25,11 @@ class MessageStore(list):
         if hasattr(self.message_placeholder, "container"):
             from frontend.utils import render_message
             render_message(self, self.message_placeholder)
+
+    def extend(self, messages):
+        for message in messages:
+            if not self._message_exists(message):
+                self.append(message)
+
+    def _message_exists(self, message):
+        return any(m.content == message.content and type(m) == type(message) for m in self)

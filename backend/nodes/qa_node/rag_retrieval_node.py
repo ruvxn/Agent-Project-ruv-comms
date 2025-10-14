@@ -1,8 +1,9 @@
 from typing import List
 import os
 from dotenv import load_dotenv
+import numpy as np
 import streamlit
-from backend.model.states.GraphState import GraphState
+from backend.model.states.graph_state.GraphState import GraphState
 from backend.model.states.qa_state.PdfTextClass import Meta, PdfTextClass
 
 
@@ -15,8 +16,6 @@ EMBED_MODEL = os.getenv("EMBED_MODEL")
 
 @log_decorator
 def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[str, list[float]]:
-    state = streamlit.session_state.state
-
     try:
         num = collection.count()
         result = collection.query(
@@ -27,8 +26,9 @@ def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[st
     if result.get("documents"):
         top_k_result = top_k_result_to_log(state, result)
         top_k_kb = "\n".join([pdf_text.chunk for pdf_text in top_k_result])
-        top_k_scores = [1 - d for d in result['distances'][0]]
-        top_score = max(top_k_scores)
+        distances = np.array(result['distances'][0])
+        top_k_scores = np.exp(-distances)
+        top_score = top_k_scores.max()
 
         # top_3_avg_score = sum(sorted(top_k_scores, reverse=True)
         #                       [:3])/min(3, len(top_k_scores))
@@ -39,8 +39,6 @@ def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[st
 
 
 def top_k_result_to_log(state, query) -> List[PdfTextClass]:
-    state = streamlit.session_state.state
-
     top_k_result: List[PdfTextClass] = []
     for doc_list, meta_list in zip(query.get('documents', []), query.get('metadatas', [])):
         for doc, meta in zip(doc_list, meta_list):
@@ -48,6 +46,7 @@ def top_k_result_to_log(state, query) -> List[PdfTextClass]:
                 chunk=doc,
                 meta=Meta(**meta)
             )
+            pdf_text_obj.meta.pdf_name = state.qa_state.pdf_name
             top_k_result.append(pdf_text_obj)
             state.logs.append(
                 f"[TOP_{state.graph_config.TOP_K}_RESULT] pdf_name: {pdf_text_obj.meta.pdf_name}, "

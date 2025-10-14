@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import streamlit
 from backend.embedding.chroma_setup import get_all_collection_name, get_collection, get_or_create_summary_collection
-from backend.model.states.GraphState import GraphState
+from backend.model.states.graph_state.GraphState import GraphState
 from backend.nodes.qa_node.rag_retrieval_node import rag_retrieval_node
 
 from backend.utils import get_embedding, get_user_input, log_decorator
@@ -14,11 +14,9 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
 
-@log_decorator
 def rag_router(state: GraphState) -> str:
     """Decide whether should use rag"""
 
-    state = streamlit.session_state.state
     log_template = state.logs.system_log_list.rag_router_log_template
 
     user_input = get_user_input()
@@ -29,9 +27,15 @@ def rag_router(state: GraphState) -> str:
     try:
         get_all_collection_name(state)
 
-        for collection_name in state.collection_names_list:
+        collection_names_search_list = state.collection_names_list
+
+        if not state.graph_config.SEARCH_ALL_COLLECTION:
+            collection_names_search_list = [state.qa_state.pdf_name]
+
+        for collection_name in collection_names_search_list:
             collection = get_collection(collection_name)
-            state.messages.append(state.collection_names_list)
+            state.logs.append(
+                f"Searching Collection: {collection_name}")
             if collection:
                 if collection.count() == 0:
                     state.logs.append(
