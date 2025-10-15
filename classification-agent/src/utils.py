@@ -22,7 +22,6 @@ class DetectedError(BaseModel):
 
 # Sentiment analysis data
 class SentimentData(BaseModel):
-    """Complete sentiment analysis for a review"""
     review_id: str
     overall_sentiment: str  # positive, negative or neutral
     overall_confidence: float  # 0.0-1.0

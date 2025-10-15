@@ -2,6 +2,7 @@
 import os
 import time
 import hashlib
+from datetime import datetime
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 from notion_client import Client
@@ -30,10 +31,16 @@ def _props_from_enriched(e: EnrichedError, hash_value: str) -> Dict[str, Any]:
     err = e.error
 
     # Base properties (always included)
+    # Use review date if available, otherwise use current date when logging
+    date_value = getattr(review, "date", None)
+    if not date_value or not str(date_value).strip():
+        # Use current date in ISO format (YYYY-MM-DD)
+        date_value = datetime.now().strftime("%Y-%m-%d")
+
     props = {
         "ReviewID":     {"title":     [{"text": {"content": review.review_id}}]},
         "Reviewer":     {"rich_text": [{"text": {"content": getattr(review, "reviewer_name", "")}}]},
-        "Date":         {"date":      {"start": str(getattr(review, "date", "")) or None}},
+        "Date":         {"date":      {"start": str(date_value)}},
         "ReviewText":   {"rich_text": [{"text": {"content": review.review[:1900]}}]},
         "ErrorSummary": {"rich_text": [{"text": {"content": err.error_summary}}]},
         "ErrorType":    {"multi_select": [{"name": t} for t in err.error_type]},

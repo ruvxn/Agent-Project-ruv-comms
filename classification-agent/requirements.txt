@@ -6,10 +6,21 @@ openai==1.45.0
 psycopg==3.2.3
 flask==3.0.0
 
-langchain==0.2.15
-langchain-openai==0.1.20
-langchain-community==0.2.3
-langgraph==0.1.19
+# LangChain Core (required by all LangChain packages)
+langchain-core>=0.3.0,<0.4.0
+
+# LangChain packages (updated for compatibility)
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-community>=0.3.0
+langgraph>=0.2.0
+
+# Anthropic Claude for agentic workflows
+langchain-anthropic>=0.2.0
+anthropic>=0.34.0
+
+# LangGraph Checkpointing for conversation memory
+langgraph-checkpoint-sqlite>=0.1.0
 
 # Sentiment Analysis Dependencies
 transformers>=4.30.0

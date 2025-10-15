@@ -22,4 +22,10 @@ NOTION_DATABASE_ID = os.getenv("NOTION_DATABASE_ID")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL")
 
-# Anthropic
+# Anthropic Claude Configuration (for agentic workflows)
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+AGENT_MODEL = os.getenv("AGENT_MODEL", "claude-3-5-sonnet-20241022")
+AGENT_TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0"))
+AGENT_CHECKPOINT_DB = os.getenv("AGENT_CHECKPOINT_DB", "classification_agent.db")
+AGENT_VERBOSE = os.getenv("AGENT_VERBOSE", "true").lower() in ("true", "1", "yes")
+AGENT_MAX_ITERATIONS = int(os.getenv("AGENT_MAX_ITERATIONS", "10"))
