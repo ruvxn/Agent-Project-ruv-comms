@@ -1,91 +1,152 @@
-import time
-from langchain_core.messages import HumanMessage, AIMessage
-from src.backend.agent.Agent import Agent
+from src.frontend.ChatManager import ChatManager
+import websockets
+from nicegui import app, ui
+import asyncio
+import json
+import logging
+from ConnectionManager import ConnectionManager
 from src.backend.tools.webscrape import WebScrape
 from src.backend.tools.websearch import WebSearch
 from src.backend.tools.memorytool import MemoryTool
+from src.backend.tools.databse import DatabaseTool
 from src.backend.tools.date_time import DateTime
-import streamlit as st
-from langgraph.checkpoint.sqlite import SqliteSaver
-import sqlite3
-from src.frontend.main import main
-import random
+from src.backend.tools.communicate import create_comm_tool
+from src.backend.tools.csv import CSVTool
 
-def load_css():
-    with open("src/frontend/styles/styles.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-def load_message(messages, state):
-    for message in messages["messages"]:
-        if isinstance(message, HumanMessage):
-            if message.content:
-                state.append({"role": "user", "content": message.content})
-        elif isinstance(message, AIMessage):
-            if message.content:
-                state.append({"role": "agent", "content": message.content})
-        else:
-            continue
-    return state
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(message)s')
 
 
-def app():
-    load_css()
-    st.set_page_config(layout="wide")
-    st.title("Agent")
-    if "config" not in st.session_state:
-        id = random.randint(1000, 10000)
-        st.session_state.config = {"configurable": {"thread_id": "3"}}
-       #"""thread id is used for concurrency and state management for the agent however there is no way to save this on the client side yet so conversations will be lost"""
+class ApplicationManager():
+    def __init__(self):
+        self.connection_manager = ConnectionManager(
+            agent_id="WebAgent",
+            description="An agent that specializes in everything web related",
+            capabilities=["WebSearch", "Webscrape"])
+        self.chat_manager = ChatManager(name="WebAgent")
+        self.task_queue = asyncio.Queue()
+        self.user_input = None
+        self.update_ui_callback = None
+
+    async def worker(self):
+        logging.info("Starting worker thread")
+        while True:
+            task_data = await self.task_queue.get()
+            logging.info(f"Worker thread picked up {task_data}")
+            logging.info(type(self.chat_manager))
+            await self.chat_manager.run_agent(task_data)
+            self.task_queue.task_done()
+            if self.update_ui_callback:
+                self.update_ui_callback()
+
+    async def message_handler(self, message: dict):
+        await self.task_queue.put(message)
+
+    async def messanger(self):
+        while True:
+            try:
+                async with websockets.connect("ws://localhost:8765") as websocket:
+                    await websocket.send(json.dumps({
+                        "type": "register",
+                        "id": "WebAgentReceiving",
+                    }))
+                    registration_response = await websocket.recv()
+                    logging.info(f"Received registration response: {registration_response}")
+                    async for message in websocket:
+                        message = json.loads(message)
+                        message = f"You have a message from:{message["sender"]}\n+ Message:{message["message"]}"
+                        await self.task_queue.put(message)
+            except (websockets.exceptions.ConnectionClosedError, ConnectionResetError) as error:
+                logging.error(f"Connection closed because: {error}")
+                await asyncio.sleep(5)
+            except Exception as error:
+                logging.error(f"Unexpected error: {error}")
+                await asyncio.sleep(5)
+
+    async def startup(self):
+        try:
+            await self.connection_manager.connect()
+        except Exception as e:
+            logging.error(f"Failed to connect: {e}")
+            return
+        await self.connection_manager.start_listening(message_handler=self.message_handler)
+
+        communicate = create_comm_tool("WebAgent", self.connection_manager)
         websearch = WebSearch()
         webscrape = WebScrape()
         datetime = DateTime()
-       #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
-        tools = [websearch, webscrape, datetime]
-        st.session_state.messages = []
-        st.session_state.agent = Agent(tools=tools, name="WebAgent")
-        with sqlite3.connect('src/backend/db/WebAgent.db', check_same_thread=False) as conn:
-            memory = SqliteSaver(conn)
-            checkpoint = memory.get_tuple(config = st.session_state.config)
-        if checkpoint:
-            value = checkpoint.checkpoint['channel_values']
-            st.session_state.messages = load_message(value, st.session_state.messages)
+        #database = DatabaseTool()
+        #memory = MemoryTool() #must have qdrant running to use this otherwise it will break the code
+        csv = CSVTool()
+        description = (
+            f"You are the {self.chat_manager.name} agent, a project coordinator. Your goal is to complete the user's request by executing a plan, which may involve delegating tasks to other agents.\n\n"
+            "Your Workflow is Asynchronous:\n"
+            "1.  **Delegate Tasks**: Use the 'ContactOtherAgents' tool to assign tasks to other agents. If you need a result, you **must** instruct them to send a reply.\n"
+            "2.  **Continue Working**: The tool only confirms that your message was sent. **This is not the answer.** After sending a message, immediately move on to the next independent step in your plan. Do not wait for a response.\n"
+            "3.  **Handle Incoming Replies**: At any time, you may receive a message from another agent. When this happens, you must: \n"
+            "    a. Identify which delegated task the message is a reply to. \n"
+            "    b. Use the information in the message to update your plan or formulate your final answer. \n"
+            "4.  **Provide the Final Answer**: Only provide the final answer to the user once all steps of your plan are complete."
+        )
+
+        tools = [websearch, webscrape, datetime, csv, communicate]
+        asyncio.create_task(self.worker())
+        #asyncio.create_task(self.messanger())
+        await self.chat_manager.setup(tools = tools, description=description)
+
+application = ApplicationManager()
+@ui.page("/")
+def main():
+    async def handle_submit():
+        text_to_send = user_input.value
+        if not text_to_send:
+            return
+        user_input.value = ''
+        application.chat_manager.messages.append({'role': 'user', 'content': text_to_send})
+        update_chat_display()
+        await application.task_queue.put(text_to_send)
+        user_input.value = ''
+        update_chat_display()
+
+    with ui.column().classes('w-full items-center'):
+        ui.label('Welcome').classes('text-2xl mt-4')
+    chat_container = ui.column().classes('w-full max-w-2xl mx-auto gap-4 p-4')
+    logging.info("Setting up UI")
 
 
-    if st.session_state.messages:
-        for msg in st.session_state.messages:
-            with st.chat_message(msg.get("role")):
-                if msg.get("role") == "agent":
-                    st.markdown(
-                        f'<div class="agent-message-container"><div class="agent-message">{msg["content"]}</div></div>',
-                        unsafe_allow_html=True)
-                else:
-                    st.markdown(
-                        f'<div class="user-message-container"><div class="user-message">{msg["content"]}</div></div>',
-                        unsafe_allow_html=True)
-    if user_input := st.chat_input("Enter your query:"):
-        if user_input:
-            with st.chat_message(user_input):
-                st.markdown(f'<div class="user-message-container"><div class="user-message">{user_input}</div></div>', unsafe_allow_html=True)
-            graph = st.session_state.agent.graph_builder()
-            print("graph built")
-            input = {"messages": [HumanMessage(content=user_input)]}
+    with ui.footer().classes('bg-white'), ui.column().classes('w-full max-w-3xl mx-auto my-6'):
+        with ui.row().classes('w-full no-wrap items-center'):
+            user_input = ui.input(placeholder="Ask Agent...") \
+                .classes('flex-grow').on('keydown.enter', handle_submit)
+            submit_button = ui.button('>', on_click=handle_submit)
+            submit_button.bind_enabled_from(user_input, 'value')
+            ui.upload()
+    logging.info("UI setup")
 
-            try:
-                 with st.spinner("Agent is thinking..."):
-                     print("Agent is thinking...")
-                     final_state = graph.invoke(input=input, config=st.session_state.config)
-                     load_message(final_state, st.session_state.messages)
-                     msg = final_state["messages"][-1].content
+    def update_chat_display():
+        chat_container.clear()
+        with chat_container:
+            for msg in application.chat_manager.messages:
+                if msg["role"] == "user":
+                    with ui.row().classes('w-full justify-start'):
+                        ui.chat_message(msg["content"], name="You", sent=True).classes(
+                            'bg-[#2f2f2f] text-gray-200 border border-[#E0E0E0] '
+                            'rounded-[20px] px-[15px] py-[10px] m-[5px] max-w-[70%]'
+                        )
+                elif msg["role"] == "agent":
+                    with ui.row().classes('w-full justify-end'):
+                        ui.chat_message(msg["content"], name="Agent", sent=False).classes(
+                            'bg-[#2d2d2d] text-gray-200 '
+                            'rounded-[20px] px-[15px] py-[10px] m-[5px] max-w-[70%]'
+                        )
 
-                     with st.chat_message("agent"):
-                            st.markdown(
-                                f'<div class="agent-message-container"><div class="agent-message">{msg}</div></div>',
-                                unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"An error occurred: here {e}")
-        else:
-            st.warning("Please enter a query.")
+    application.update_ui_callback = update_chat_display
+app.on_startup(application.startup)
+ui.run()
 
-if __name__ == "__main__":
-    app()
-    #main()
+
+
+
+
+
+

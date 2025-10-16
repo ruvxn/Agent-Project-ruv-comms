@@ -1,11 +1,10 @@
 import pytz
-from dateutil import tz
 from datetime import datetime
 from langchain_core.tools import BaseTool
 
 
 class DateTime(BaseTool):
-    """Tool class that inherits from base tool"""
+    """Tool for basic date and time"""
     name: str = "DateTime"
     description: str = "A tool that can get the current date and time"
 
