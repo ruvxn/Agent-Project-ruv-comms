@@ -20,10 +20,6 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 async def tool_agent_async(state: GraphState) -> GraphState:
     client = ollama.AsyncClient()
     user_input = get_user_input()
-    if user_input:
-        state.messages.append(HumanMessage(content=user_input))
-    else:
-        return state
 
     bind_tools = get_bind_tools(state)
 
@@ -76,7 +72,6 @@ def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
 
         result = tool_to_invoke["invoke"].invoke(args)
         new_state = command(tool_name, result)
-
     return new_state
 
 

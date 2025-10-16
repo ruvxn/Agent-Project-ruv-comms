@@ -24,8 +24,9 @@ class qa_tool(BaseTool):
 
         new_state = qa_state if isinstance(
             qa_state, GraphState) else GraphState(**qa_state)
+
         return ToolReturnClass(
             state=new_state,
-            agent_response=new_state.messages.ai_response_list[-1] if new_state.messages.ai_response_list else "No response",
+            agent_response=new_state.messages.ai_response_list[-1].content if new_state.messages.ai_response_list else "No response",
             meta={"tool_name": "qa_tool"}
         )

@@ -35,6 +35,8 @@ class StateManager():
         elif state_name == "logs":
             if isinstance(new_value, list):
                 state.logs.extend(new_value)
+            elif isinstance(new_value, str):
+                state.logs.append(new_value)
             elif isinstance(new_value, LogStore):
                 state.logs.extend(new_value)
             else:
@@ -45,4 +47,4 @@ class StateManager():
 
     @staticmethod
     def _message_exists(messages, msg: MessageStore) -> bool:
-        return any(m.content == msg.content and type(m) == type(msg) for m in messages)
+        return any(message.content == msg.content and type(message) == type(msg) for message in messages)

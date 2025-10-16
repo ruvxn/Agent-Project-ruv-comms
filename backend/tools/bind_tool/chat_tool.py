@@ -25,7 +25,9 @@ class chat_tool(BaseTool):
             response = chat(
                 OLLAMA_MODEL, [{"role": "user", "content": user_input}])
 
-        state.messages.append(AIMessage(content=response.message.content))
+        state.messages.append(
+            AIMessage(content=response.message.content))
+
         return ToolReturnClass(
             state=state,
             agent_response=state.messages.ai_response_list[-1].content if state.messages.ai_response_list else "No response",

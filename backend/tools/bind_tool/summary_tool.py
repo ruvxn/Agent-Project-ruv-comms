@@ -24,8 +24,9 @@ class summary_tool(BaseTool):
         summary_state: GraphState = self.subgraph.invoke(state)
         new_state = summary_state if isinstance(
             summary_state, GraphState) else GraphState(**summary_state)
+
         return ToolReturnClass(
             state=new_state,
-            agent_response=state.summary_state.final_summary,
+            agent_response=new_state.messages.ai_response_list[-1].content if new_state.messages.ai_response_list else "No response",
             meta={"tool_name": "summary_tool"}
         )

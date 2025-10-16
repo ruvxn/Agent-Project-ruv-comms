@@ -3,10 +3,10 @@ import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 
 
-def render_log(logs, log_placeholder):
+def render_log(logStore, log_placeholder):
     if hasattr(log_placeholder, "container"):
         with log_placeholder.container():
-            for log in reversed(logs):
+            for log in reversed(logStore.logs):
                 st.write(log)
                 st.write("**********")
 
@@ -14,7 +14,7 @@ def render_log(logs, log_placeholder):
 def render_message(messages, message_placeholder):
     if hasattr(message_placeholder, "container"):
         with message_placeholder.container():
-            for message in messages:
+            for message in messages.message_history:
                 placeholder = st.empty()
                 if isinstance(message, HumanMessage):
                     with placeholder.chat_message("user"):

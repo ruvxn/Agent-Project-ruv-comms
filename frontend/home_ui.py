@@ -28,7 +28,8 @@ def render_main_section(state: GraphState) -> GraphState:
     user_input = st.chat_input("Type Message")
 
     if user_input:
-        state.messages.append(HumanMessage(content=user_input))
+        state.messages.append(HumanMessage(
+            content=user_input), True)
         placeholder = st.empty()
         placeholder.markdown("[AI is thinking...]")
         compiled_graph = get_graph(state)

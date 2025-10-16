@@ -14,10 +14,18 @@ def merge_messages(current: MessageStore, new: MessageStore) -> MessageStore:
     if new is None:
         return current
 
-    for msg in new:
-        if not current._message_exists(msg):
-            current.append(msg)
-            render_message(msg, current.message_placeholder)
+    all_formatted_msgs = []
+
+    for msg in new.messages:
+        msg_obj = msg[1] if isinstance(msg, tuple) else msg
+        flattened = MessageStore.flatten_messages(msg_obj)
+        all_formatted_msgs.extend(flattened)
+
+    for m in all_formatted_msgs:
+        if not current._message_exists(m):
+            current.append(m)
+            render_message(m, current.message_placeholder)
+
     return current
 
 
