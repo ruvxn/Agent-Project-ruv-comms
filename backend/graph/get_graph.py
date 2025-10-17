@@ -1,7 +1,10 @@
+import os
+import sqlite3
+from dotenv import load_dotenv
 from langgraph.graph import StateGraph, START, END
+from backend.embedding.sql_setup import create_checkpoint_memory
 from backend.model.states.graph_state.GraphState import GraphState
 from backend.tools.tool_invoke_agent import tool_agent
-from langgraph.checkpoint.memory import InMemorySaver
 
 
 def get_graph(state: GraphState) -> StateGraph:
@@ -13,6 +16,6 @@ def get_graph(state: GraphState) -> StateGraph:
     graph.add_edge(START, "tool_agent")
     graph.add_edge("tool_agent", END)
 
-    checkpointer = InMemorySaver()
+    memory = create_checkpoint_memory()
 
-    return graph.compile()
+    return graph.compile(checkpointer=memory)

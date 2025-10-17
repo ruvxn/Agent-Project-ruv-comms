@@ -9,9 +9,12 @@ from backend.model.states.graph_state.GraphState import GraphState
 from langchain_core.messages import HumanMessage, AIMessage
 from backend.graph.get_graph import get_graph
 from langsmith import traceable
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 
 load_dotenv()
+
+SQL_PATH = os.getenv("SQL_PATH")
 
 FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
 
@@ -21,11 +24,23 @@ def render_main_section(state: GraphState) -> GraphState:
     st.title("PDF Agent")
 
     state = render_file_uploader(state)
+    new_state = state
 
     if not getattr(state.messages, "message_placeholder", None):
         state.messages.message_placeholder = st.session_state.message_placeholder
 
     user_input = st.chat_input("Type Message")
+
+    with SqliteSaver.from_conn_string(SQL_PATH) as checkpointer:
+        checkpoint_data = checkpointer.get(
+            {"configurable": {"thread_id": "123"}})
+
+        if checkpoint_data and "state" in checkpoint_data:
+            try:
+                restored_state = GraphState(**checkpoint_data)
+                state = restored_state
+            except Exception as e:
+                state.logs.append(f"Failed to restore checkpoint: {e}")
 
     if user_input:
         state.messages.append(HumanMessage(
@@ -34,12 +49,8 @@ def render_main_section(state: GraphState) -> GraphState:
         placeholder.markdown("[AI is thinking...]")
         compiled_graph = get_graph(state)
         state_for_invoke = state
-        # compiled_graph.invoke(state_for_invoke,  config={
-        #     "thread_id": "123",
-        #     "checkpoint_ns": "graph_ns",
-        #     "checkpoint_id": "checkpoint_1"
-        # })
-        new_state = compiled_graph.invoke(state_for_invoke)
+        new_state = compiled_graph.invoke(state_for_invoke, config={
+            "thread_id": "123"})
         placeholder.markdown(" ")
         StateManager.update_state(new_state)
     return StateManager.get_state()

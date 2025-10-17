@@ -9,6 +9,9 @@ from frontend.utils import render_log, render_message
 
 
 def merge_messages(current: MessageStore, new: MessageStore) -> MessageStore:
+    if isinstance(current, dict):
+        current = MessageStore(**current)
+
     if current is None:
         return new
     if new is None:
@@ -25,11 +28,13 @@ def merge_messages(current: MessageStore, new: MessageStore) -> MessageStore:
         if not current._message_exists(m):
             current.append(m)
             render_message(m, current.message_placeholder)
-
     return current
 
 
 def merge_logs(current: LogStore, new: LogStore) -> LogStore:
+    if isinstance(current, dict):
+        current = LogStore(**current)
+
     if current is None:
         return new
     if new is None:
