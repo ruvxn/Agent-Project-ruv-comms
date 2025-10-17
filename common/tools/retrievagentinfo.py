@@ -2,7 +2,7 @@ from langchain_core.tools import BaseTool
 import logging
 from pydantic import BaseModel, create_model, Field
 import os
-from src.backend.Stores.ClientStore import ClientStore
+from common.stores.ClientStore import ClientStore
 
 
 

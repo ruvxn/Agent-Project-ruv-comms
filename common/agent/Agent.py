@@ -5,9 +5,9 @@ from langchain.chat_models import init_chat_model
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
-from src.backend.memory.semantic import Semantic
-from src.backend.memory.episodic import Episode
-from src.backend.Stores.QdrantStore import QdrantStore
+from common.memory.semantic import Semantic
+from common.memory.episodic import Episode
+from common.stores.QdrantStore import QdrantStore
 import sqlite3
 
 class Agent:

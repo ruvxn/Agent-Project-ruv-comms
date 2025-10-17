@@ -1,6 +1,6 @@
 from langchain_core.tools import BaseTool
 from typing_extensions import override
-from src.backend.Stores.QdrantStore import QdrantStore
+from common.stores.QdrantStore import QdrantStore
 class MemoryTool(BaseTool):
     name: str = "MemorySearch"
     description: str = "A tool that can search through your long term memory for semantic or episodic memories. Input should be a search query."

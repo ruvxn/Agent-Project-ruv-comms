@@ -3,7 +3,7 @@ import logging
 from pydantic import BaseModel, Field
 from typing import Literal, List
 import os
-from src.backend.Stores.ClientStore import ClientStore
+from common.stores.ClientStore import ClientStore
 
 
 

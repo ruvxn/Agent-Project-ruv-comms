@@ -26,7 +26,7 @@ class DatabaseTool(BaseTool):
     description: str = "A tool that can interact with a database. Input should contain the thing you want to put in the databse."
 
     def _run(self, item_id: int| None, rating: int| None, content: str) -> str:
-        path = 'src/backend/db/review.db'
+        path = 'db/review.db'
         sqlite_interact(path)
         conn = sqlite3.connect(path)
         cursor = conn.cursor()

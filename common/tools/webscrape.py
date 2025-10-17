@@ -23,10 +23,10 @@ def save_webpage_as_pdf(title, content_md):
         if remaining_text:
             break
 
-    doc.save(f"src/storage/{title}.pdf")
+    doc.save(f"db/{title}.pdf")
     doc.close()
     print("PDF saved successfully.")
-    return f"src/storage/{title}.pdf"
+    return f"db/{title}.pdf"
 
 
 class WebScrape(BaseTool):
@@ -72,7 +72,7 @@ class WebScrape(BaseTool):
 
                         save_webpage_as_pdf(title, content_md)
                         print(f"#{soup.title.string}\n\n{md(page_text)}")
-                        return f"#{title}\n\n{content_md} and the webpage has been saved at src/storage/ as {title}.pdf"
+                        return f"#{title}\n\n{content_md} and the webpage has been saved at /db as {title}.pdf"
                     except Exception as e:
                         return f'An error occurred during scraping: {e}'
                     finally:
