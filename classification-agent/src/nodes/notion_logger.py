@@ -37,14 +37,17 @@ def _props_from_enriched(e: EnrichedError, hash_value: str) -> Dict[str, Any]:
         # Use current date in ISO format (YYYY-MM-DD)
         date_value = datetime.now().strftime("%Y-%m-%d")
 
+   
+    categories_text = ", ".join(err.error_type)  # Join array into comma separated string
+
     props = {
         "ReviewID":     {"title":     [{"text": {"content": review.review_id}}]},
         "Reviewer":     {"rich_text": [{"text": {"content": getattr(review, "reviewer_name", "")}}]},
         "Date":         {"date":      {"start": str(date_value)}},
         "ReviewText":   {"rich_text": [{"text": {"content": review.review[:1900]}}]},
         "ErrorSummary": {"rich_text": [{"text": {"content": err.error_summary}}]},
-        "ErrorType":    {"multi_select": [{"name": t} for t in err.error_type]},
-        "Criticality":  {"select": {"name": e.criticality}},
+        "Categories":   {"rich_text": [{"text": {"content": categories_text}}]},  
+        "Severity":     {"select": {"name": e.criticality}},                      
         "Rationale":    {"rich_text": [{"text": {"content": err.rationale[:1900]}}]},
         "Hash":         {"rich_text": [{"text": {"content": hash_value}}]},
     }
@@ -53,8 +56,9 @@ def _props_from_enriched(e: EnrichedError, hash_value: str) -> Dict[str, Any]:
     if e.sentiment_data:
         try:
             sentiment_props = {
+                # Changed from select to text for flexibility
                 "OverallSentiment": {
-                    "select": {"name": e.sentiment_data.overall_sentiment}
+                    "rich_text": [{"text": {"content": e.sentiment_data.overall_sentiment}}]
                 },
                 "SentimentScore": {
                     "number": round(e.sentiment_data.overall_confidence, 3)

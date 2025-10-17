@@ -59,13 +59,18 @@ def parse_review_data(review_data_json: str) -> List[EnrichedError]:
     
         errors = review_item.get("errors", [])
         for error_item in errors:
+            # Support both old and new field names
+            categories = error_item.get("categories") or error_item.get("error_type", ["Other"])
+            severity = error_item.get("severity") or error_item.get("criticality", "Medium Priority")
+
             detected_error = DetectedError(
                 error_summary=error_item.get("error_summary", ""),
-                error_type=error_item.get("error_type", ["Other"]),
+                error_type=categories,  # Maps to categories
+                severity=severity,       # LLM-generated severity
                 rationale=error_item.get("rationale", "")
             )
 
-            criticality = error_item.get("criticality", "None")
+            criticality = severity  # Use severity as criticality for EnrichedError
 
             enriched_errors.append(
                 EnrichedError(

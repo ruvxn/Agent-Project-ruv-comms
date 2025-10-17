@@ -5,22 +5,52 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.chat_models import ChatOllama
 from src.utils import RawReview, DetectedError
 
-# labels for errors
-TYPES = {"Crash","Billing","Auth","API","Performance","Docs","Permissions","Mobile","UI","Webhooks","Other"}
+# rmeoved hardcoded error types - llm now generates categories based on context
 
-#system prompt
-SYSTEM = """You are a precise QA assistant.
-Task: Given a customer review, extract ZERO OR MORE concrete PRODUCT/SERVICE PROBLEMS
-OR FEATURE/ENHANCEMENT REQUESTS.
+SYSTEM = """You are an expert at analyzing customer reviews and identifying issues.
+
+Task: Given a customer review, extract ZERO OR MORE concrete PRODUCT/SERVICE PROBLEMS OR FEATURE/ENHANCEMENT REQUESTS.
+
+**IMPORTANT**: First understand what type of business this review is about, then generate appropriate category names.
 
 Return ONLY valid JSON with this exact shape:
-{"errors":[{"error_summary":"...", "error_type":["Crash","Billing","Auth","API","Performance","Docs","Permissions","Mobile","UI","Webhooks","Other"], "rationale":"..."}]}
+{
+  "business_type": "restaurant|software|hotel|retail|service|other",
+  "errors": [
+    {
+      "error_summary": "Brief description of the issue",
+      "error_type": ["Category1", "Category2"],
+      "severity": "Severity Level",
+      "rationale": "Why this categorization?"
+    }
+  ]
+}
 
-Guidelines:
-- error_summary <= 140 chars, actionable (what/where). For feature/enhancement requests, start with "Feature request:" or "Enhancement:" and name the request (e.g., "Feature request: dark mode").
-- If no problem or request is present, return {"errors": []}.
-- Use multiple error_type labels if appropriate; for feature requests, use ["Other"] unless clearly UI/Docs/etc.
-- Output must be ONLY the JSON object (no prose).
+Guidelines for category generation:
+- **Understand the business context first**
+  * Restaurant/Food: Use categories like "Food Quality", "Service", "Cleanliness", "Wait Time", "Pricing", "Ambiance"
+  * Software/SaaS: Use categories like "Stability", "Performance", "Authentication", "Billing", "User Interface", "API"
+  * Hotel: Use categories like "Room Condition", "Staff", "Amenities", "Cleanliness", "Location", "Check-in"
+  * Retail/E-commerce: Use categories like "Product Quality", "Shipping", "Customer Service", "Returns", "Pricing"
+  * Other businesses: Generate appropriate categories based on industry
+
+- **Category naming**:
+  * Use 1-3 word category names
+  * Be specific but not too granular
+  * Be consistent - if you use "Food Quality" once, use it again for similar issues
+  * Multiple categories are OK if issue spans multiple areas
+
+- **Severity levels** (use EXACTLY one of these values):
+  * "Critical" - for severe issues (crashes, data loss, health/safety, system down)
+  * "Major" - for significant problems (broken features, major bugs, poor service)
+  * "Minor" - for small issues (UI glitches, minor inconveniences)
+  * "Suggestion" - for feature requests and enhancements
+  * "None" - if no real issue detected (positive reviews)
+
+- error_summary <= 140 chars, actionable (what/where)
+- For feature requests, start with "Feature request:" or "Enhancement:"
+- If no problem or request is present, return {"business_type": "...", "errors": []}
+- Output must be ONLY the JSON object (no prose)
 """
 
 # few shot to guide the model
@@ -29,7 +59,16 @@ FEWSHOT_USER = """Review:
 Not thrilled about how the mobile app crashes whenever I switch workspaces. Lost my draft twice.
 ```
 Return JSON only:"""
-FEWSHOT_ASSISTANT = """{"errors":[{"error_summary":"Mobile app crashes when switching workspaces","error_type":["Mobile","Crash"],"rationale":"User reports reproducible crash and data loss while switching workspaces."}]}"""
+
+FEWSHOT_ASSISTANT = """{
+  "business_type": "software",
+  "errors": [{
+    "error_summary": "Mobile app crashes when switching workspaces",
+    "error_type": ["Stability", "Mobile App"],
+    "severity": "Critical",
+    "rationale": "User reports reproducible crash and data loss while switching workspaces."
+  }]
+}"""
 
 USER = """Review:
 ```
@@ -39,15 +78,17 @@ Return JSON only:"""
 
 FEWSHOT_USER_2 = """Review:
 ```
-Could you add support for bulk edit on tasks?
+The BBQ tasting palette did not live up to the hype. Food was cold and took 45 minutes.
 ```
 Return JSON only:"""
 
 FEWSHOT_ASSISTANT_2 = """{
+  "business_type": "restaurant",
   "errors": [{
-    "error_summary": "Feature request: bulk edit for tasks",
-    "error_type": ["Other"],
-    "rationale": "User explicitly asks to add bulk-edit capability."
+    "error_summary": "Disappointing BBQ quality and cold food with long wait",
+    "error_type": ["Food Quality", "Food Temperature", "Wait Time"],
+    "severity": "Major",
+    "rationale": "Multiple food quality issues including temperature and excessive wait time."
   }]
 }"""
 
@@ -194,12 +235,16 @@ def detect_errors_with_ollama(
             types = e.get("error_type") or []
             if isinstance(types, str):
                 types = [types]
-            types = [t for t in types if isinstance(t, str) and t in TYPES] or ["Other"]
+            # REMOVED: validation against hardcoded TYPES - now accepts any string from LLM
+            # Filter to only keep valid strings, but don't validate against a fixed set
+            types = [t.strip() for t in types if isinstance(t, str) and t.strip()] or ["Other"]
+            severity = (e.get("severity") or "None").strip()  # Must be: Critical, Major, Minor, Suggestion, None
             rationale = (e.get("rationale") or "").strip()
             if summary:
                 out.append(DetectedError(
                     error_summary=summary,
                     error_type=types,
+                    severity=severity,  # Include severity from LLM
                     rationale=rationale
                 ))
 

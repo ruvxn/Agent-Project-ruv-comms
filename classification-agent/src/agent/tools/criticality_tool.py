@@ -11,7 +11,6 @@ from langchain_core.tools import tool
 from src.config import OLLAMA_MODEL
 from src.utils import RawReview, DetectedError
 from src.nodes.detect_errors import detect_errors_with_ollama
-from src.nodes.classify_criticality import classify_criticality
 from src.database import load_unprocessed_reviews, get_connection
 
 
@@ -99,17 +98,16 @@ def classify_review_criticality(
 
         results = []
         for review in reviews:
-            #dtect errrs using the llm
+            #dtect errrs and severity using the llm
             detected_errors = detect_errors_with_ollama(review, OLLAMA_MODEL)
 
-        
             classified_errors = []
             for error in detected_errors:
-                criticality = classify_criticality(error)
+                #llm generated severity instead of classify_criticality
                 classified_errors.append({
                     "error_summary": error.error_summary,
-                    "error_type": error.error_type,
-                    "criticality": criticality,
+                    "categories": error.error_type, 
+                    "severity": error.severity,      # llm generated severity
                     "rationale": error.rationale
                 })
 

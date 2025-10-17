@@ -1,18 +1,19 @@
 from typing import List, Dict, Tuple
-from src.utils import RawReview, DetectedError, EnrichedError, SentimentData, Criticality, hash_error
-from src.nodes.classify_criticality import classify_criticality
+from src.utils import RawReview, DetectedError, EnrichedError, SentimentData, hash_error
+
+# removed import classify_criticality - now using llm generated severity directly
 
 
 def apply_sentiment_adjustment(
-    base_criticality: Criticality,
+    base_criticality: str,  
     sentiment: SentimentData,
     review_rating: int
-) -> Tuple[Criticality, bool]:
+) -> Tuple[str, bool]:  
     """
     Adjust criticality based on sentiment analysis and review rating.
 
     Args:
-        base_criticality: The base criticality from keyword classification
+        base_criticality: The base criticality from LLM classification
         sentiment: Sentiment analysis data for the review
         review_rating: Customer rating (1-5)
 
@@ -24,6 +25,7 @@ def apply_sentiment_adjustment(
     final = base_criticality
 
     # Strong negative sentiment escalation
+    # Severity values: Critical, Major, Minor, Suggestion, None
     if polarity < -0.85 and base_criticality == "Major":
         final = "Critical"
         influenced = True
@@ -36,7 +38,7 @@ def apply_sentiment_adjustment(
         final = "Critical"
         influenced = True
 
-    # Strong positive sentiment downgrade (positive review with minor UI issue)
+    # Strong positive sentiment downgrade (positive review with minor issue)
     if polarity > 0.85 and base_criticality == "Minor":
         final = "Suggestion"
         influenced = True
@@ -51,7 +53,7 @@ def normalize(review: RawReview, detected: List[DetectedError], sentiment: Senti
 
     Args:
         review: The original review
-        detected: List of detected errors
+        detected: List of detected errors (includes LLM generated severity)
         sentiment: Sentiment analysis data
 
     Returns:
@@ -60,10 +62,10 @@ def normalize(review: RawReview, detected: List[DetectedError], sentiment: Senti
     enriched: List[EnrichedError] = []
 
     for e in detected:
-        # Base classification from keywords
-        base_crit = classify_criticality(e)
+        # CHANGED: Use LLM-generated severity from DetectedError instead of classify_criticality
+        base_crit = e.severity  # LLM already assigned severity
 
-        # Sentiment-adjusted classification
+        # Sentiment-adjusted classification (optional escalation/downgrade)
         final_crit, influenced = apply_sentiment_adjustment(
             base_crit,
             sentiment,
@@ -76,8 +78,8 @@ def normalize(review: RawReview, detected: List[DetectedError], sentiment: Senti
                 error=e,
                 criticality=final_crit,
                 error_hash=hash_error(review.review_id, e.error_summary),
-                sentiment_data=sentiment,  # NEW: Attach sentiment data
-                sentiment_influenced_criticality=influenced  # NEW: Track if sentiment changed severity
+                sentiment_data=sentiment,
+                sentiment_influenced_criticality=influenced
             )
         )
 

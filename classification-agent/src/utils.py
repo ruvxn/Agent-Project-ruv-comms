@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
-from typing import List, Literal, Optional
+from typing import List, Optional
 import hashlib
 
-Criticality = Literal["Critical", "Major", "Minor", "Suggestion", "None"]
+# removed hardcoded criticality type to accept any string from LLM
 
 #columns expteceted from the datasset as inputs
 class RawReview(BaseModel):
@@ -15,9 +15,12 @@ class RawReview(BaseModel):
     rating: int
 
 #detetcted error LLM output before it is normalised
+# error_type is now any list of strings (LLM-generated categories)
+# severity must be one of: Critical, Major, Minor, Suggestion, None
 class DetectedError(BaseModel):
     error_summary: str
-    error_type: List[str] = Field(default_factory=list)
+    error_type: List[str] = Field(default_factory=list) 
+    severity: str = "None" 
     rationale: str
 
 # Sentiment analysis data
@@ -31,7 +34,7 @@ class SentimentData(BaseModel):
 class EnrichedError(BaseModel):
     review: RawReview
     error: DetectedError
-    criticality: Criticality
+    criticality: str  # Changed from Criticality Literal to str 
     error_hash: str
 
     #Sentiment enrichment
