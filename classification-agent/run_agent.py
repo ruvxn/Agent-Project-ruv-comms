@@ -5,7 +5,6 @@ from typing import Optional
 import asyncio
 
 
-from src.agent.agent_graph import build_agent_graph
 
 
 def print_banner():
@@ -154,13 +153,13 @@ Commands:
         print("ANTHROPIC_API_KEY=sk-ant-api03-your-key-here\n")
         sys.exit(1)
 
-
-
-    graph = await build_agent_graph()
+    # Build and compile the agent graph with memory checkpointing
+    from src.agent.agent_graph import create_agent_app
+    agent_app = await create_agent_app()
 
     # Run interactive session
     try:
-        await run_interactive_session(thread_id=args.thread_id, graph = graph)
+        await run_interactive_session(thread_id=args.thread_id, graph=agent_app)
     except Exception as e:
         print(f"\nFatal error: {str(e)}\n")
         sys.exit(1)

@@ -2,6 +2,7 @@ from typing import Literal
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+import aiosqlite
 
 from langchain_core.messages import ToolMessage
 
@@ -153,15 +154,17 @@ async def build_agent_graph() -> StateGraph:
 
 
 #compile graph with SQLite checkpointing
-def create_agent_app():
-   
-    graph = build_agent_graph()
+async def create_agent_app():
+
+    graph = await build_agent_graph()
 
     # Set up SQLite checkpointing for conversation memory
-    # Create SQLite connection directly 
-    import sqlite3
-    conn = sqlite3.connect(AGENT_CHECKPOINT_DB, check_same_thread=False)
+    # Create aiosqlite connection and initialize AsyncSqliteSaver
+    conn = await aiosqlite.connect(AGENT_CHECKPOINT_DB)
     memory = AsyncSqliteSaver(conn)
+
+    # Setup tables if they don't exist
+    await memory.setup()
 
     if AGENT_VERBOSE:
         print(f"[Agent] Initialized with checkpointing to: {AGENT_CHECKPOINT_DB}")
