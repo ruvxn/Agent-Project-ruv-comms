@@ -25,7 +25,7 @@ class AgentServer:
         logging.info(f"Agent {agent_id} was registered.")
         await websocket.send(json.dumps({"status": "registered"}))
 
-    async def forward_message(self, sender_id: str, recipient_id: str ,message:str):
+    async def forward_message(self, message_type: str, sender_id: str, recipient_id: str ,message:str):
         recipient_ws = self.agent_registry.get(recipient_id)
         if recipient_ws:
             try:
@@ -42,23 +42,37 @@ class AgentServer:
     async def dispatch_message(self):
         while True:
             try:
-                recipient_id, sender_id, message = await self.queue.get()
-                await self.forward_message(sender_id, recipient_id, message)
+                message_type, recipient_id, sender_id, message = await self.queue.get()
+                await self.forward_message(message_type, sender_id, recipient_id, message)
                 self.queue.task_done()
             except Exception as e:
                 logging.error(f"Error sending message: {e}")
 
+    async def register_with_agent(self, registration_message, websocket: websockets.ClientProtocol):
+        if registration_message["agent_id"] == ["DirectoryAgent"]:
+            recpeint_ws = self.agent_registry.get("DirectoryAgent")
+            agent_id = registration_message["agent_id"]
+            self.agent_registry[agent_id] = websocket
+            logging.info(f"Agent {agent_id} registered.")
+            await recpeint_ws.send(json.dumps({
+                registration_message["agent_id"],
+                registration_message["description"],
+                registration_message["capablities"],
+
+            }))
+        else:
+            agent_id = registration_message["agent_id"]
+            self.agent_registry[agent_id] = websocket
+            logging.info(f"Agent {agent_id} registered.")
+
     async def connection_handler(self, websocket):
             logging.info("A client connected")
             agent_id = None
-
             try:
                 registration_message = await websocket.recv()
                 data = json.loads(registration_message)
-                if data.get("type") == "register" and "id" in data:
-                    agent_id = data["id"]
-                    self.agent_registry[agent_id] = websocket
-                    logging.info(f"Agent {agent_id} registered.")
+                if data.get("type") == "register" and "agent_id" in data:
+                    await self.register_with_agent(registration_message=registration_message, websocket=websocket)
                     await websocket.send(json.dumps({"status": "registration successful"}))
                 else:
                     await websocket.close(1008, json.dumps({"status": "registration failed"}))
@@ -66,16 +80,15 @@ class AgentServer:
                 async for message in websocket:
                     try:
                         data = json.loads(message)
+                        message_type = message["message_type"]
                         recipient_id = data.get("recipient_id")
                         sender_id = data.get("sender_id")
                         message = data.get("message")
                         if recipient_id and message:
-                            item = (recipient_id, sender_id, message)
+                            item = (message_type, recipient_id, sender_id, message)
                             logging.info(f"Agent {sender_id} sending {message}")
                             await self.queue.put(item)
-                            #await websocket.send(json.dumps({"status": "message sent, please wait for an update from the other agent on the outcome"}))
                         else:
-                            #await websocket.send(json.dumps({"status":"Invalid message format"}))
                             logging.error(f"Invalid message format: {message}")
                     except Exception as e:
                         logging.error(f"Error sending message: {e}")

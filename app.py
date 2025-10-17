@@ -4,7 +4,7 @@ from nicegui import app, ui
 import asyncio
 import json
 import logging
-from ConnectionManager import ConnectionManager
+from src.server.ConnectionManager import ConnectionManager
 from src.backend.tools.webscrape import WebScrape
 from src.backend.tools.websearch import WebSearch
 from src.backend.tools.memorytool import MemoryTool

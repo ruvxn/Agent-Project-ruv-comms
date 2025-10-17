@@ -1,9 +1,10 @@
-from src.backend.tools.qdrant import RegisterAgent
+from src.backend.tools.retrievagentinfo import ReteriveAgent
+from src.backend.tools.saveagentinfo import RegisterAgent
 from src.backend.tools.communicate import create_comm_tool
 import asyncio
 import logging
 from src.frontend.ChatManager import ChatManager
-from ConnectionManager import directory_connection
+from src.server.ConnectionManager import ConnectionManager
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
@@ -11,9 +12,9 @@ class ApplicationManager():
     def __init__(self):
         self.chat_manager = ChatManager(name="Database")
         self.task_queue = asyncio.Queue()
-        #self.user_input = None
-        #self.update_ui_callback = None
-        self.connection_manager = directory_connection
+        self.connection_manager = ConnectionManager("Directory", 
+                                                    "An agent that given a quary can retrive information on agents that are able to help with that quary", 
+                                                    ["RegisterAgentInformation", "RetriveAgentInformaton"])
 
     async def worker(self):
         logging.info("Starting worker thread")
@@ -24,8 +25,7 @@ class ApplicationManager():
             message = f"You have a message from:{task_data["sender"]}\n+ Message:{task_data["message"]}"
             await self.chat_manager.run_agent(message)
             self.task_queue.task_done()
-            if self.update_ui_callback:
-                self.update_ui_callback()
+           
     async def message_handler(self, message: dict):
         await self.task_queue.put(message)
 
@@ -36,10 +36,11 @@ class ApplicationManager():
             logging.error(f"Failed to connect: {e}")
             return
         await self.connection_manager.start_listening(message_handler=self.message_handler)
-        communicate = create_comm_tool("Database")
-        register_agent = RegisterAgent()
+        communicate = create_comm_tool("Database", self.connection_manager)
+       # register_agent = RegisterAgent()
+        #reteriveagent = ReteriveAgent()
         # memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
-        tools = [register_agent, communicate]
+        tools = [communicate]
         description = (
             """# IDENTITY
             You are the Broker Agent, the master switchboard operator for an entire ecosystem of AI agents. 

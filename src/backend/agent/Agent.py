@@ -7,7 +7,7 @@ from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
 from src.backend.memory.semantic import Semantic
 from src.backend.memory.episodic import Episode
-from src.backend.memory.QdrantStore import QdrantStore
+from src.backend.Stores.QdrantStore import QdrantStore
 import sqlite3
 
 class Agent:

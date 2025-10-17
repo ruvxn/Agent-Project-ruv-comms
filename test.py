@@ -1,5 +1,5 @@
 import logging
-from ConnectionManager import web_connection
+from src.server.ConnectionManager import web_connection
 import asyncio
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')

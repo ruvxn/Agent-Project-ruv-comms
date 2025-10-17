@@ -23,11 +23,11 @@ class ConnectionManager:
         except websockets.exceptions.ConnectionClosedError:
             logging.info("Connection Closed")
             self.websocket = None
-            raise ConnectionClosedError
+            await asyncio.sleep(5)
         except Exception as e:
             logging.info(f"Error: {e}")
             self._websocket = None
-            raise ConnectionClosedError
+            await asyncio.sleep(5)
 
     async def _register(self) -> str:
         if not self._websocket:
@@ -61,20 +61,24 @@ class ConnectionManager:
         self.task = asyncio.create_task(self.receive(message_handler))
 
     async def receive(self, message_handler):
+        
         while True:
-            try:
-                async with self._websocket as websocket:
-                    async for message in websocket:
-                        task_data = json.loads(message)
-                        message = f"You have a message from:{task_data["sender"]}\n+ Message:{task_data["message"]}"
-                        await message_handler(message)
-            except (websockets.exceptions.ConnectionClosedError, ConnectionResetError) as error:
-                await asyncio.sleep(5)
-            except Exception as error:
-                await asyncio.sleep(5)
+            if self._websocket is None:
+                raise ConnectionError
+            else:
+                try:
+                    async with self._websocket as websocket:
+                        async for message in websocket:
+                            task_data = json.loads(message)
+                            message = f"You have a message from:{task_data["sender"]}\n+ Message:{task_data["message"]}"
+                            await message_handler(message)
+                except (websockets.exceptions.ConnectionClosedError, ConnectionResetError) as error:
+                    await asyncio.sleep(5)
+                except Exception as error:
+                    await asyncio.sleep(5)
 
     async def close(self):
         self._websocket.close()
         self._websocket = None
 
-directory_connection = ConnectionManager("test", "test", ["test"])
+

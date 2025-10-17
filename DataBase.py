@@ -1,7 +1,7 @@
 import websockets
 from src.backend.tools.databse import DatabaseTool
 from src.backend.tools.communicate import create_comm_tool
-from ConnectionManager import ConnectionManager
+from src.server.ConnectionManager import ConnectionManager
 import asyncio
 import json
 import logging
