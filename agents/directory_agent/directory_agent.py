@@ -1,5 +1,7 @@
-from common.tools.retrievagentinfo import ReteriveAgent
-from common.tools.saveagentinfo import RegisterAgent
+import json
+
+from agents.directory_agent.tools.retrievagentinfo import ReteriveAgent
+from agents.directory_agent.tools.saveagentinfo import RegisterAgent
 from common.tools.communicate import create_comm_tool
 import asyncio
 import logging
@@ -10,10 +12,10 @@ logging.basicConfig(level=logging.INFO,
 
 class ApplicationManager():
     def __init__(self):
-        self.chat_manager = ChatManager(name="Database")
+        self.chat_manager = ChatManager(name="Directory")
         self.task_queue = asyncio.Queue()
-        self.connection_manager = ConnectionManager("Directory", 
-                                                    "An agent that given a quary can retrive information on agents that are able to help with that quary", 
+        self.connection_manager = ConnectionManager("DirectoryAgent",
+                                                    "An agent that given a query can retrieve information on agents that are able to help with that quary",
                                                     ["RegisterAgentInformation", "RetriveAgentInformaton"])
 
     async def worker(self):
@@ -21,11 +23,18 @@ class ApplicationManager():
         while True:
             task_data = await self.task_queue.get()
             logging.info(f"Worker thread picked up {task_data}")
-            logging.info(type(self.chat_manager))
-            message = f"You have a message from:{task_data["sender"]}\n+ Message:{task_data["message"]}"
+            message = ""
+            if task_data["type"] == "message":
+                message = f"You have a new agent to register:{task_data["agent_id"]}\n+ Message:{task_data["message"]}"
+            elif task_data["type"] == "agent_registration":
+                message = (f"You have a new agent to register:{task_data["agent_id"]}\n+ "
+                           f"Description:{task_data["description"]}\n+"
+                           f"Capabilities: {task_data['capabilities']}")
+            else:
+                logging.info(f"Unknown message type: {task_data['type']}")
             await self.chat_manager.run_agent(message)
             self.task_queue.task_done()
-           
+
     async def message_handler(self, message: dict):
         await self.task_queue.put(message)
 
@@ -37,10 +46,10 @@ class ApplicationManager():
             return
         await self.connection_manager.start_listening(message_handler=self.message_handler)
         communicate = create_comm_tool("Database", self.connection_manager)
-       # register_agent = RegisterAgent()
-        #reteriveagent = ReteriveAgent()
+        register_agent = RegisterAgent()
+        reteriveagent = ReteriveAgent()
         # memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
-        tools = [communicate]
+        tools = [communicate, register_agent, reteriveagent]
         description = (
             """# IDENTITY
             You are the Broker Agent, the master switchboard operator for an entire ecosystem of AI agents. 

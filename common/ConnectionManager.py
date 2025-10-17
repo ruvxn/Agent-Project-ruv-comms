@@ -35,7 +35,7 @@ class ConnectionManager:
 
         await self._websocket.send(json.dumps({
             "type": "register",
-            "id": self.agent_id,
+            "agent_id": self.agent_id,
             "description": self.description,
             "capabilities": self.capabilities,
         }))
@@ -61,7 +61,6 @@ class ConnectionManager:
         self.task = asyncio.create_task(self.receive(message_handler))
 
     async def receive(self, message_handler):
-        
         while True:
             if self._websocket is None:
                 raise ConnectionError
@@ -70,11 +69,18 @@ class ConnectionManager:
                     async with self._websocket as websocket:
                         async for message in websocket:
                             task_data = json.loads(message)
-                            message = f"You have a message from:{task_data["sender"]}\n+ Message:{task_data["message"]}"
-                            await message_handler(message)
+                            logging.info(f"Received message: {task_data}")
+                            await message_handler(task_data)
                 except (websockets.exceptions.ConnectionClosedError, ConnectionResetError) as error:
+                    logging.error(error)
+                    self.websocket = None
+                    await self.connect()
                     await asyncio.sleep(5)
                 except Exception as error:
+                    logging.error(f"Error: {error}")
+                    self.websocket = None
+                    await self.connect()
+                    await asyncio.sleep(5)
                     await asyncio.sleep(5)
 
     async def close(self):

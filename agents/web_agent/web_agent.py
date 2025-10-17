@@ -5,8 +5,8 @@ import asyncio
 import json
 import logging
 from common.ConnectionManager import ConnectionManager
-from common.tools.webscrape import WebScrape
-from common.tools.websearch import WebSearch
+from agents.web_agent.tools.webscrape import WebScrape
+from agents.web_agent.tools.websearch import WebSearch
 from common.tools.memorytool import MemoryTool
 from common.tools.databse import DatabaseTool
 from common.tools.date_time import DateTime
@@ -34,7 +34,8 @@ class ApplicationManager():
             task_data = await self.task_queue.get()
             logging.info(f"Worker thread picked up {task_data}")
             logging.info(type(self.chat_manager))
-            await self.chat_manager.run_agent(task_data)
+            message = f"You have a new agent to register:{task_data["agent_id"]}\n+ Message:{task_data["message"]}"
+            await self.chat_manager.run_agent(message)
             self.task_queue.task_done()
             if self.update_ui_callback:
                 self.update_ui_callback()

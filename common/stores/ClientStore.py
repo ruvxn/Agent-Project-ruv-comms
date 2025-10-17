@@ -10,7 +10,7 @@ from enum import Enum
 from common.stores.Embedding import Embedding
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
-
+import uuid
 
 
 
@@ -48,19 +48,19 @@ class ClientStore():
                 )
             check = self._check_for_duplicates(vector=vector)
             if check is None:
-                id = data['agent_id']
+                self.client.upsert(
+                    collection_name=self.collection_name,
+                    points=[
+                        models.PointStruct(
+                            id=str(uuid.uuid4()),
+                            vector=vector,
+                            payload=data,
+                        )
+                    ]
+                )
+                return "Agent registration saved"
             else:
-                id = check
-            self.client.upsert(
-                collection_name=self.collection_name,
-                points=[
-                    models.PointStruct(
-                        id=id,
-                        vector=vector,
-                        payload=data,
-                    )
-                ]
-            )
+                return "Agent Registration already exists"
             
     def get(self, quary: dict) -> dict | None:
         vector = self.embedding.get_embedding(quary["description"])

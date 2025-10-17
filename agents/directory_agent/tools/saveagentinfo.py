@@ -10,7 +10,7 @@ from common.stores.ClientStore import ClientStore
 class AgentRegistrationInput(BaseModel):
     """Input schema for the RegisterAgent tool."""
     agent_id: str = Field(
-        description="The unique, machine-readable ID for the agent."
+        description="The agent id."
     )
     description: str = Field(
         description="A detailed natural language description of the agent's functions and specialities"
@@ -24,7 +24,7 @@ class AgentRegistrationInput(BaseModel):
 
 class RegisterAgent(BaseTool):
     """Tool class that inherits from base tool"""
-    name: str = "SaveInformationOnOtherAgents"
+    name: str = "register_agent"
     description: str = "A tool that allows you to save agent information in a database"
     args_schema: type[BaseModel] = AgentRegistrationInput
     def _run(self,

@@ -24,7 +24,8 @@ class ApplicationManager():
         while True:
             task_data = await self.task_queue.get()
             logging.info(f"Worker thread picked up {task_data}")
-            await self.chat_manager.run_agent(task_data)
+            message = f"You have a new agent to register:{task_data["agent_id"]}\n+ Message:{task_data["message"]}"
+            await self.chat_manager.run_agent(message)
             self.task_queue.task_done()
 
 

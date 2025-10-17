@@ -18,7 +18,7 @@ class ChatManager:
     async def setup(self, tools: List[Any], description: str):
         logging.info("ChatManager setup")
         self.agent = Agent(tools=tools, name=self.name, description=description)
-        self.connection = await aiosqlite.connect(f'/db/{self.name}.db')
+        self.connection = await aiosqlite.connect(f'db/{self.name}.db')
         self.graph = await self.agent.graph_builder(self.connection)
 
     def load_message(self, messages):

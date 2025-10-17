@@ -49,30 +49,46 @@ class AgentServer:
                 logging.error(f"Error sending message: {e}")
 
     async def register_with_agent(self, registration_message, websocket: websockets.ClientProtocol):
-        if registration_message["agent_id"] == ["DirectoryAgent"]:
-            recpeint_ws = self.agent_registry.get("DirectoryAgent")
-            agent_id = registration_message["agent_id"]
-            self.agent_registry[agent_id] = websocket
-            logging.info(f"Agent {agent_id} registered.")
-            await recpeint_ws.send(json.dumps({
-                registration_message["agent_id"],
-                registration_message["description"],
-                registration_message["capablities"],
+        data = registration_message
+        try:
+            agent_id = data["agent_id"]
+        except KeyError:
+            logging.error(f"Agent {data["agent_id"]} is missing agent_id.")
+            return
+        self.agent_registry[agent_id] = websocket
+        if agent_id == "DirectoryAgent":
+            logging.info(f"Agent {agent_id} was registered.")
+            return
+        directory_ws = self.agent_registry.get("DirectoryAgent")
 
-            }))
+        if directory_ws:
+            logging.info(f"Notifying Directory Agent about new agent: {agent_id}")
+            notification = {
+                "type": "agent_registration",
+                "agent_id": agent_id,
+                "description": data.get("description", "No description provided."),
+                "capabilities": data.get("capabilities", [])
+            }
+            try:
+                logging.info(f"Agent {agent_id} was registered.")
+                await directory_ws.send(json.dumps(notification))
+                #logging.info(f"Agent {agent_id} was registered.")
+            except ConnectionClosedError:
+                logging.info(f"Agent {agent_id} sending {notification} failed")
+            return
         else:
-            agent_id = registration_message["agent_id"]
-            self.agent_registry[agent_id] = websocket
-            logging.info(f"Agent {agent_id} registered.")
+            logging.info(f"Agent {agent_id} was registered.")
 
     async def connection_handler(self, websocket):
-            logging.info("A client connected")
+            #logging.info("A client connected")
             agent_id = None
             try:
                 registration_message = await websocket.recv()
                 data = json.loads(registration_message)
                 if data.get("type") == "register" and "agent_id" in data:
-                    await self.register_with_agent(registration_message=registration_message, websocket=websocket)
+                    agent_id = data["agent_id"]
+                    logging.info(f"Client Connected and registering: {data['agent_id']}")
+                    await self.register_with_agent(registration_message=data, websocket=websocket)
                     await websocket.send(json.dumps({"status": "registration successful"}))
                 else:
                     await websocket.close(1008, json.dumps({"status": "registration failed"}))
@@ -80,7 +96,7 @@ class AgentServer:
                 async for message in websocket:
                     try:
                         data = json.loads(message)
-                        message_type = message["message_type"]
+                        message_type = data.get("message_type")
                         recipient_id = data.get("recipient_id")
                         sender_id = data.get("sender_id")
                         message = data.get("message")
@@ -97,6 +113,7 @@ class AgentServer:
             except ConnectionClosedOK:
                 logging.info(f"Connection closed for agent {agent_id} (normal closure)")
             except Exception as e:
+                logging.info("here")
                 logging.error(f"Connection handler error for agent {agent_id} : {e}")
             finally:
                 if agent_id is not None:
