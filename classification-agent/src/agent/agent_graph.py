@@ -1,7 +1,8 @@
 from typing import Literal
 from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
 from langchain_core.messages import ToolMessage
 
 from src.config import (
@@ -16,7 +17,8 @@ from src.agent.prompts import get_system_prompt
 from src.agent.tools import (
     classify_review_criticality,
     analyze_review_sentiment,
-    log_reviews_to_notion
+    log_reviews_to_notion,
+    get_current_datetime
 )
 
 
@@ -74,7 +76,8 @@ def create_agent_node():
     tools = [
         classify_review_criticality,
         analyze_review_sentiment,
-        log_reviews_to_notion
+        log_reviews_to_notion,
+        get_current_datetime
     ]
     llm_with_tools = llm.bind_tools(tools)
 
@@ -116,7 +119,7 @@ def should_continue(state: ReviewAgentState) -> Literal["tools", "end"]:
         return "end"
 
 
-def build_agent_graph() -> StateGraph:
+async def build_agent_graph() -> StateGraph:
    
    
     graph = StateGraph(ReviewAgentState)
@@ -126,7 +129,8 @@ def build_agent_graph() -> StateGraph:
     tool_node = create_tool_node([
         classify_review_criticality,
         analyze_review_sentiment,
-        log_reviews_to_notion
+        log_reviews_to_notion,
+        get_current_datetime
     ])
 
     #add nodes
@@ -157,7 +161,7 @@ def create_agent_app():
     # Create SQLite connection directly 
     import sqlite3
     conn = sqlite3.connect(AGENT_CHECKPOINT_DB, check_same_thread=False)
-    memory = SqliteSaver(conn)
+    memory = AsyncSqliteSaver(conn)
 
     if AGENT_VERBOSE:
         print(f"[Agent] Initialized with checkpointing to: {AGENT_CHECKPOINT_DB}")
@@ -165,4 +169,4 @@ def create_agent_app():
     return graph.compile(checkpointer=memory)
 
 
-agent_app = create_agent_app()
+

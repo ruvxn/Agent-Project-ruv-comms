@@ -2,8 +2,10 @@ import sys
 import argparse
 import uuid
 from typing import Optional
+import asyncio
 
-from src.agent.agent_graph import agent_app
+
+from src.agent.agent_graph import build_agent_graph
 
 
 def print_banner():
@@ -56,7 +58,7 @@ def get_agent_response(messages: list) -> str:
     return "(No response)"
 
 
-def run_interactive_session(thread_id: Optional[str] = None):
+async def run_interactive_session(thread_id, graph):
     """
     run an interactive session
     """
@@ -98,7 +100,7 @@ def run_interactive_session(thread_id: Optional[str] = None):
             # Invoke the agent
             print("\nAgent: ", end="", flush=True)
 
-            response = agent_app.invoke(
+            response = await graph.ainvoke(
                 {"messages": [{"role": "user", "content": user_input}]},
                 config=config
             )
@@ -120,7 +122,7 @@ def run_interactive_session(thread_id: Optional[str] = None):
             print("Please try again.\n")
 
 
-def main():
+async def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
         description="Interactive Review Classification Agent",
@@ -152,13 +154,17 @@ Commands:
         print("ANTHROPIC_API_KEY=sk-ant-api03-your-key-here\n")
         sys.exit(1)
 
+
+
+    graph = await build_agent_graph()
+
     # Run interactive session
     try:
-        run_interactive_session(thread_id=args.thread_id)
+        await run_interactive_session(thread_id=args.thread_id, graph = graph)
     except Exception as e:
         print(f"\nFatal error: {str(e)}\n")
         sys.exit(1)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
