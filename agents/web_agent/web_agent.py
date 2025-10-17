@@ -1,17 +1,17 @@
-from src.frontend.ChatManager import ChatManager
+from common.ChatManager import ChatManager
 import websockets
 from nicegui import app, ui
 import asyncio
 import json
 import logging
-from src.server.ConnectionManager import ConnectionManager
-from src.backend.tools.webscrape import WebScrape
-from src.backend.tools.websearch import WebSearch
-from src.backend.tools.memorytool import MemoryTool
-from src.backend.tools.databse import DatabaseTool
-from src.backend.tools.date_time import DateTime
-from src.backend.tools.communicate import create_comm_tool
-from src.backend.tools.csv import CSVTool
+from common.ConnectionManager import ConnectionManager
+from common.tools.webscrape import WebScrape
+from common.tools.websearch import WebSearch
+from common.tools.memorytool import MemoryTool
+from common.tools.databse import DatabaseTool
+from common.tools.date_time import DateTime
+from common.tools.communicate import create_comm_tool
+from common.tools.csv import CSVTool
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')

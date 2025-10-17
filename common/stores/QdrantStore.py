@@ -3,8 +3,8 @@ import os
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import VectorParams, Distance
 from openai import OpenAI
-from src.backend.memory.semantic import Semantic
-from src.backend.memory.episodic import Episode
+from common.memory.semantic import Semantic
+from common.memory.episodic import Episode
 from typing import Union
 from .Embedding import Embedding
 

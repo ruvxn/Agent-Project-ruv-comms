@@ -3,7 +3,7 @@ import asyncio
 import logging
 from pydantic import BaseModel, Field, create_model, PrivateAttr
 from enum import Enum
-from src.server.ConnectionManager import ConnectionManager
+from common.ConnectionManager import ConnectionManager
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 

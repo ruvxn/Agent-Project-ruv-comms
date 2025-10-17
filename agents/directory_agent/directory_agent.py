@@ -1,10 +1,10 @@
-from src.backend.tools.retrievagentinfo import ReteriveAgent
-from src.backend.tools.saveagentinfo import RegisterAgent
-from src.backend.tools.communicate import create_comm_tool
+from common.tools.retrievagentinfo import ReteriveAgent
+from common.tools.saveagentinfo import RegisterAgent
+from common.tools.communicate import create_comm_tool
 import asyncio
 import logging
-from src.frontend.ChatManager import ChatManager
-from src.server.ConnectionManager import ConnectionManager
+from common.ChatManager import ChatManager
+from common.ConnectionManager import ConnectionManager
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 

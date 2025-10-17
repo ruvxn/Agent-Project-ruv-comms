@@ -7,7 +7,7 @@ from qdrant_client import QdrantClient, models
 from qdrant_client.models import VectorParams, Distance
 from openai import OpenAI
 from enum import Enum
-from .Embedding import Embedding
+from common.stores.Embedding import Embedding
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 

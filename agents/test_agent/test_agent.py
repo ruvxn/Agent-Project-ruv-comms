@@ -1,11 +1,11 @@
 import websockets
-from src.backend.tools.databse import DatabaseTool
-from src.backend.tools.communicate import create_comm_tool
-from src.server.ConnectionManager import ConnectionManager
+from common.tools.databse import DatabaseTool
+from common.tools.communicate import create_comm_tool
+from common.ConnectionManager import ConnectionManager
 import asyncio
 import json
 import logging
-from src.frontend.ChatManager import ChatManager
+from common.ChatManager import ChatManager
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 

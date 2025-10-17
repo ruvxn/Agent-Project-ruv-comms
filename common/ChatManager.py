@@ -1,6 +1,7 @@
 from langchain_core.messages import HumanMessage, AIMessage
-from src.backend.agent.Agent import Agent
+from common.agent.Agent import Agent
 import aiosqlite
+from typing import List, Any
 import logging
 from typing import Any, List
 logging.basicConfig(level=logging.INFO,
@@ -20,7 +21,7 @@ class ChatManager:
         self.connection = await aiosqlite.connect(f'src/backend/db/{self.name}.db')
         self.graph = await self.agent.graph_builder(self.connection)
 
-    def load_message(self, messages) -> list:
+    def load_message(self, messages):
         for message in messages["messages"]:
             if isinstance(message, HumanMessage):
                 if message.content:
