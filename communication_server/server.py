@@ -30,6 +30,7 @@ class AgentServer:
         if recipient_ws:
             try:
                 await recipient_ws.send(json.dumps({
+                    "message_type": message_type,
                     "sender": sender_id,
                     "message": message,
                 }))
@@ -72,12 +73,13 @@ class AgentServer:
             try:
                 logging.info(f"Agent {agent_id} was registered.")
                 await directory_ws.send(json.dumps(notification))
-                #logging.info(f"Agent {agent_id} was registered.")
+                # logging.info(f"Agent {agent_id} was registered.")
             except ConnectionClosedError:
                 logging.info(f"Agent {agent_id} sending {notification} failed")
             return
         else:
             logging.info(f"Agent {agent_id} was registered.")
+
 
     async def connection_handler(self, websocket):
             #logging.info("A client connected")

@@ -11,9 +11,9 @@ logging.basicConfig(level=logging.INFO,
 
 class ApplicationManager():
     def __init__(self):
-        self.chat_manager = ChatManager(name="Database")
+        self.chat_manager = ChatManager(name="DatabaseAgent")
         self.connection_manager = ConnectionManager(
-            agent_id="Database",
+            agent_id="DatabaseAgent",
             description="An agent that specializes in everything database related",
             capabilities=["DatabaseInsertion"])
         self.task_queue = asyncio.Queue()
@@ -24,7 +24,13 @@ class ApplicationManager():
         while True:
             task_data = await self.task_queue.get()
             logging.info(f"Worker thread picked up {task_data}")
-            message = f"You have a new agent to register:{task_data["agent_id"]}\n+ Message:{task_data["message"]}"
+            message = ""
+            if isinstance(task_data, dict):
+                message = f"You have a new message from: {task_data['sender']}\n+ Message:{task_data['message']}"
+            elif isinstance(task_data, str):
+                message = task_data
+            else:
+                logging.info(f"Incorrect message format")
             await self.chat_manager.run_agent(message)
             self.task_queue.task_done()
 
@@ -60,7 +66,7 @@ class ApplicationManager():
             return
         await self.connection_manager.start_listening(message_handler=self.message_handler)
 
-        communicate = create_comm_tool("Database", self.connection_manager)
+        communicate = create_comm_tool("DatabaseAgent", self.connection_manager)
         database = DatabaseTool()
         # memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
         tools = [database, communicate]

@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO,
 
 class ApplicationManager():
     def __init__(self):
-        self.chat_manager = ChatManager(name="Directory")
+        self.chat_manager = ChatManager(name="DirectoryAgent")
         self.task_queue = asyncio.Queue()
         self.connection_manager = ConnectionManager("DirectoryAgent",
                                                     "An agent that given a query can retrieve information on agents that are able to help with that quary",
@@ -25,7 +25,7 @@ class ApplicationManager():
             logging.info(f"Worker thread picked up {task_data}")
             message = ""
             if task_data["type"] == "message":
-                message = f"You have a new agent to register:{task_data["agent_id"]}\n+ Message:{task_data["message"]}"
+                message = f"You have a new message from: {task_data['agent_id']}\n+ Message:{task_data['message']}"
             elif task_data["type"] == "agent_registration":
                 message = (f"You have a new agent to register:{task_data["agent_id"]}\n+ "
                            f"Description:{task_data["description"]}\n+"
@@ -45,7 +45,7 @@ class ApplicationManager():
             logging.error(f"Failed to connect: {e}")
             return
         await self.connection_manager.start_listening(message_handler=self.message_handler)
-        communicate = create_comm_tool("Database", self.connection_manager)
+        communicate = create_comm_tool("DirectoryAgent", self.connection_manager)
         register_agent = RegisterAgent()
         reteriveagent = ReteriveAgent()
         # memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code

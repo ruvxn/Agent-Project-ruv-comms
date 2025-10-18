@@ -34,7 +34,13 @@ class ApplicationManager():
             task_data = await self.task_queue.get()
             logging.info(f"Worker thread picked up {task_data}")
             logging.info(type(self.chat_manager))
-            message = f"You have a new agent to register:{task_data["agent_id"]}\n+ Message:{task_data["message"]}"
+            message = ""
+            if isinstance(task_data, dict):
+                message = f"You have a new message from: {task_data['sender']}\n+ Message:{task_data['message']}"
+            elif isinstance(task_data, str):
+                message = task_data
+            else:
+                logging.info(f"Incorrect message format")
             await self.chat_manager.run_agent(message)
             self.task_queue.task_done()
             if self.update_ui_callback:
