@@ -23,28 +23,30 @@ FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
 def render_main_section(state: GraphState) -> GraphState:
     st.title("PDF Agent")
 
-    state = render_file_uploader(state)
-    new_state = state
-
     if not getattr(state.messages, "message_placeholder", None):
         state.messages.message_placeholder = st.session_state.message_placeholder
 
+    if "initialized" not in st.session_state:
+        with SqliteSaver.from_conn_string(SQL_PATH) as checkpointer:
+            checkpoint_data = checkpointer.get(
+                {"configurable": {"thread_id": "123"}})
+
+        if checkpoint_data:
+            fake_msg = AIMessage(
+                content="*****[Restored previous messages]*****")
+            state.messages.append(fake_msg, True)
+
+        st.session_state.initialized = True
+
+    state = render_file_uploader(state)
+
     user_input = st.chat_input("Type Message")
-
-    with SqliteSaver.from_conn_string(SQL_PATH) as checkpointer:
-        checkpoint_data = checkpointer.get(
-            {"configurable": {"thread_id": "123"}})
-
-        if checkpoint_data and "state" in checkpoint_data:
-            try:
-                restored_state = GraphState(**checkpoint_data)
-                state = restored_state
-            except Exception as e:
-                state.logs.append(f"Failed to restore checkpoint: {e}")
+    new_state = state
 
     if user_input:
         state.messages.append(HumanMessage(
             content=user_input), True)
+        StateManager.update_state(state)
         placeholder = st.empty()
         placeholder.markdown("[AI is thinking...]")
         compiled_graph = get_graph(state)
@@ -53,7 +55,7 @@ def render_main_section(state: GraphState) -> GraphState:
             "thread_id": "123"})
         placeholder.markdown(" ")
         StateManager.update_state(new_state)
-    return StateManager.get_state()
+    return new_state
 
 
 def render_sidebar(state: GraphState) -> GraphState:
