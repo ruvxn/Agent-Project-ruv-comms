@@ -21,8 +21,6 @@ FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
 
 @traceable
 def render_main_section(state: GraphState) -> GraphState:
-    st.title("PDF Agent")
-
     if not getattr(state.messages, "message_placeholder", None):
         state.messages.message_placeholder = st.session_state.message_placeholder
 
@@ -55,6 +53,8 @@ def render_main_section(state: GraphState) -> GraphState:
             "thread_id": "123"})
         placeholder.markdown(" ")
         StateManager.update_state(new_state)
+        if isinstance(new_state, dict):
+            new_state = GraphState(**new_state)
     return new_state
 
 
