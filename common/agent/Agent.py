@@ -12,10 +12,10 @@ import sqlite3
 
 class Agent:
     """An Agent class"""
-    def __init__(self, tools: List[Any],name: str, description: str):
+    def __init__(self, tools: List[Any],name: str, prompt: str):
         """init method for class Agent requires tools as a list of tools"""
         self.name = name
-        self.description = description
+        self.prompt= prompt
         self.llm = init_chat_model("ollama:qwen3:8b") #updated this for ollama as "ollama:model_name"
         self.llm_openai = init_chat_model("gpt-4o-mini")
         self.tools = tools
@@ -46,7 +46,7 @@ class Agent:
 
     def chat(self, state: State):
         system_prompt = (
-           self.description
+           self.prompt
         )
         if state.get('critique') and state['critique'] != 'None':
             system_prompt += f"you must revise your previous answer based on the following critique: {state['critique']}"

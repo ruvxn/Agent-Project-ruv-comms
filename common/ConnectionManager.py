@@ -81,7 +81,6 @@ class ConnectionManager:
                     self.websocket = None
                     await self.connect()
                     await asyncio.sleep(5)
-                    await asyncio.sleep(5)
 
     async def close(self):
         self._websocket.close()

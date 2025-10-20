@@ -1,4 +1,5 @@
 import json
+
 from agents.directory_agent.tools.retrievagentinfo import ReteriveAgent
 from agents.directory_agent.tools.saveagentinfo import RegisterAgent
 from common.tools.communicate import create_comm_tool
@@ -9,10 +10,7 @@ from common.ConnectionManager import ConnectionManager
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
-
-class AgentManager():
-    """Manages the agent, however needs to be replaced by the AgentManager
-           class from the common directory to reduce duplicate code"""
+class ApplicationManager():
     def __init__(self):
         self.chat_manager = ChatManager(name="DirectoryAgent")
         self.task_queue = asyncio.Queue()
@@ -86,12 +84,12 @@ class AgentManager():
             ---
             **CRITICAL DIRECTIVE:** Your value is in your knowledge of the network, not in executing tasks. **Under no circumstances should you ever attempt to fulfill a task request yourself.** Your only output is a message to another agent. You MUST ALWAYS reply.
                     """)
-        await self.chat_manager.setup(tools=tools, prompt=description)
+        await self.chat_manager.setup(tools=tools, description=description)
         asyncio.create_task(self.worker())
 
 
 async def main():
-    application = AgentManager()
+    application = ApplicationManager()
     await application.startup()
     await asyncio.Event().wait()
 if __name__ == "__main__":

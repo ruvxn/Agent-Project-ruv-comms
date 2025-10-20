@@ -17,9 +17,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
 
-class AgentManager():
-    """Manages the agent, however needs to be replaced by the AgentManager
-        class from the common directory to reduce duplicate code"""
+class ApplicationManager():
     def __init__(self):
         self.connection_manager = ConnectionManager(
             agent_id="WebAgent",
@@ -101,9 +99,9 @@ class AgentManager():
         tools = [websearch, webscrape, datetime, csv, communicate]
         asyncio.create_task(self.worker())
         #asyncio.create_task(self.messanger())
-        await self.chat_manager.setup(tools = tools, prompt=description)
+        await self.chat_manager.setup(tools = tools, description=description)
 
-application = AgentManager()
+application = ApplicationManager()
 @ui.page("/")
 def main():
     async def handle_submit():

@@ -9,10 +9,7 @@ from common.ChatManager import ChatManager
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
-
-class AgentManager():
-    """Manages the agent, however needs to be replaced by the AgentManager
-    class from the common directory to reduce duplicate code"""
+class ApplicationManager():
     def __init__(self):
         self.chat_manager = ChatManager(name="DatabaseAgent")
         self.connection_manager = ConnectionManager(
@@ -81,12 +78,12 @@ class AgentManager():
             "3.  **Formulate a Reply**: Once you have the result from your tools, prepare a clear and concise message containing the answer.\n"
             "4.  **Reply to the Sender**: **You MUST always reply.** Use the 'ContactOtherAgents' tool to send the result back to the original agent who contacted you. This is your final step."
         )
-        await self.chat_manager.setup(tools=tools, prompt=description)
+        await self.chat_manager.setup(tools=tools, description=description)
         asyncio.create_task(self.worker())
-
+        #asyncio.create_task(self.messanger())
 
 async def main():
-    application = AgentManager()
+    application = ApplicationManager()
     await application.startup()
     await asyncio.Event().wait()
 if __name__ == "__main__":
