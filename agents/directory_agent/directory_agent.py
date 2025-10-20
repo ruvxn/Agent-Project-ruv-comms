@@ -26,9 +26,9 @@ class AgentManager():
             task_data = await self.task_queue.get()
             logging.info(f"Worker thread picked up {task_data}")
             message = ""
-            if task_data["type"] == "message":
+            if task_data["message_type"] == "message":
                 message = f"You have a new message from: {task_data['agent_id']}\n+ Message:{task_data['message']}"
-            elif task_data["type"] == "agent_registration":
+            elif task_data["message_type"] == "registration":
                 message = (f"You have a new agent to register:{task_data["agent_id"]}\n+ "
                            f"Description:{task_data["description"]}\n+"
                            f"Capabilities: {task_data['capabilities']}")

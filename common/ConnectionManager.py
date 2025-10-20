@@ -38,6 +38,7 @@ class ConnectionManager:
             "agent_id": self.agent_id,
             "description": self.description,
             "capabilities": self.capabilities,
+
         }))
         registration_response = await self._websocket.recv()
         logging.info(registration_response)

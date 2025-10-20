@@ -65,7 +65,7 @@ class AgentServer:
         if directory_ws:
             logging.info(f"Notifying Directory Agent about new agent: {agent_id}")
             notification = {
-                "type": "agent_registration",
+                "message_type": "registration",
                 "agent_id": agent_id,
                 "description": data.get("description", "No description provided."),
                 "capabilities": data.get("capabilities", [])

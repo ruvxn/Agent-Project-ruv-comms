@@ -33,7 +33,7 @@ class Communicate(BaseTool):
 
         }
         try:
-            await self.web_connection.send(message, recipient_id)
+            await self.web_connection.send(message_to_send, recipient_id)
         except Exception as e:
             logging.error(f"Failed to connect: {e}")
             return
