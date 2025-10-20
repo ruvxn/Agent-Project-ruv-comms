@@ -5,7 +5,7 @@ from backend.model.states.graph_state.SummaryState import SummaryState
 from backend.model.states.qa_state.PdfState import PdfState
 from backend.model.stores.LogStore import LogStore
 from backend.model.stores.MessageStore import MessageStore
-from frontend.utils import render_log, render_message
+from frontend.utils import render_log #render_message
 
 
 def merge_messages(current: MessageStore, new: MessageStore) -> MessageStore:
@@ -27,7 +27,7 @@ def merge_messages(current: MessageStore, new: MessageStore) -> MessageStore:
     for m in all_formatted_msgs:
         if not current._message_exists(m):
             current.append(m)
-            render_message(m, current.message_placeholder)
+            #render_message(m, current.message_placeholder)
     return current
 
 

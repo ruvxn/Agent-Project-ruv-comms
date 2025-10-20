@@ -23,7 +23,7 @@ class chat_tool(BaseTool):
 
         if user_input:
             response = chat(
-                OLLAMA_MODEL, [{"role": "user", "content": user_input}])
+                "qwen3:8b", [{"role": "user", "content": user_input}])
 
         state.messages.append(
             AIMessage(content=response.message.content))

@@ -10,22 +10,98 @@ from langchain_core.messages import HumanMessage, AIMessage
 from backend.graph.get_graph import get_graph
 from langsmith import traceable
 from langgraph.checkpoint.sqlite import SqliteSaver
-
-
+from nicegui import ui, app, events
 load_dotenv()
 
-SQL_PATH = os.getenv("SQL_PATH")
+#SQL_PATH = os.getenv("SQL_PATH")
 
-FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
+#FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
 
 
 @traceable
+@ui.page("/")
 def render_main_section(state: GraphState) -> GraphState:
-    if not getattr(state.messages, "message_placeholder", None):
+    async def handle_submit():
+        text_to_send = user_input.value
+        if not text_to_send:
+            return
+        state.messages.append(HumanMessage(
+            content=text_to_send), True)
+        StateManager.update_state(state)
+
+        compiled_graph = await get_graph(state)
+        state_for_invoke = state
+        new_state = await compiled_graph.ainvoke(state_for_invoke, config={
+            "thread_id": "123"})
+        print(new_state)
+        StateManager.update_state(new_state)
+        if isinstance(new_state, dict):
+            new_state = GraphState(**new_state)
+
+    async def handle_upload(e: events.UploadEventArguments):
+        try:
+            content = await e.file.text()
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
+                temp_file.write(content)
+                temp_file.flush()
+                state.qa_state.pdf_path = temp_file.name
+                state.qa_state.pdf_name = e.file.name
+                print(state.qa_state.is_upload)
+                print(state.qa_state.pdf_path)
+                print(state.qa_state.pdf_name)
+        except Exception as e:
+            print("Error", e)
+        state.qa_state.is_upload = True
+
+    def handle_multiple_upload(e: events.MultiUploadEventArguments):
+        try:
+            for files in e.files:
+                e.content.seek(0)
+                with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
+                    temp_file.write(e.content.read().decode('utf-8'))
+                    temp_file.flush()
+                    state.qa_state.pdf_path = temp_file.name
+                    state.qa_state.pdf_name = e.name
+        except Exception as e:
+            return ("Failed")
+        state.qa_state.is_upload = True
+
+    ui.upload(
+        on_upload=handle_upload,
+        #on_multi_upload=handle_multiple_upload,
+        multiple=False,
+        auto_upload=False,
+        label='Upload File',
+    ).props('accept=".pdf"')
+
+    with ui.column().classes('w-full items-center'):
+        ui.label('Welcome').classes('text-2xl mt-4')
+    chat_container = ui.column().classes('w-full max-w-2xl mx-auto gap-4 p-4')
+
+
+    with ui.footer().classes('bg-white'), ui.column().classes('w-full max-w-3xl mx-auto my-6'):
+        with ui.row().classes('w-full no-wrap items-center'):
+            user_input = ui.input(placeholder="Ask Agent...") \
+                .classes('flex-grow').on('keydown.enter', handle_submit)
+            submit_button = ui.button('>', on_click=handle_submit)
+            submit_button.bind_enabled_from(user_input, 'value')
+
+
+        def update_chat_display():
+            chat_container.clear()
+
+
+
+
+
+
+"""
+ if not getattr(state.messages, "message_placeholder", None):
         state.messages.message_placeholder = st.session_state.message_placeholder
 
     if "initialized" not in st.session_state:
-        with SqliteSaver.from_conn_string(SQL_PATH) as checkpointer:
+
+        with SqliteSaver.from_conn_string("db/test.db") as checkpointer:
             checkpoint_data = checkpointer.get(
                 {"configurable": {"thread_id": "123"}})
 
@@ -35,29 +111,7 @@ def render_main_section(state: GraphState) -> GraphState:
             state.messages.append(fake_msg, True)
 
         st.session_state.initialized = True
-
-    state = render_file_uploader(state)
-
-    user_input = st.chat_input("Type Message")
-    new_state = state
-
-    if user_input:
-        state.messages.append(HumanMessage(
-            content=user_input), True)
-        StateManager.update_state(state)
-        placeholder = st.empty()
-        placeholder.markdown("[AI is thinking...]")
-        compiled_graph = get_graph(state)
-        state_for_invoke = state
-        new_state = compiled_graph.invoke(state_for_invoke, config={
-            "thread_id": "123"})
-        placeholder.markdown(" ")
-        StateManager.update_state(new_state)
-        if isinstance(new_state, dict):
-            new_state = GraphState(**new_state)
-    return new_state
-
-
+       
 def render_sidebar(state: GraphState) -> GraphState:
     with st.sidebar:
         log_tab, config_tab = st.tabs(["Logs", "Configs"])
@@ -120,29 +174,43 @@ def render_config_sidebar(state: GraphState, config_tab) -> GraphState:
             "SUMMARY_CHUNK_OVERLAP", key="SUMMARY_CHUNK_OVERLAP", min_value=50, max_value=5000, value=state.graph_config.SUMMARY_CHUNK_OVERLAP)
         SHOW_LOG = st.checkbox("SHOW_LOG", True, key="SHOW_LOG")
 
-
+ """
 def render_file_uploader(state: GraphState) -> GraphState:
-    file_uploader = st.file_uploader(" ", type=[
-                                     "pdf"], accept_multiple_files=[True], key="file_uploader")
-    if file_uploader is not None:
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
-            temp_file.write(file_uploader.read())
-            temp_file.flush()
-            state.qa_state.pdf_path = temp_file.name
-            state.qa_state.pdf_name = file_uploader.name
-
+    def handle_upload(e: events.UploadEventArguments):
+        try:
+            e.content.seek(0)
+            with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
+                temp_file.write(e.content.read().decode('utf-8'))
+                temp_file.flush()
+                state.qa_state.pdf_path = temp_file.name
+                state.qa_state.pdf_name = e.name
+                print(state.qa_state.is_upload)
+                print(state.qa_state.pdf_path)
+                print(state.qa_state.pdf_name)
+        except Exception as e:
+            return ("Failed")
         state.qa_state.is_upload = True
-    else:
-        state.qa_state.is_upload = False
-        state.qa_state.is_processed = False
+    def handle_multiple_upload(e: events.MultiUploadEventArguments):
+            try:
+                for files in e.files:
+                    e.content.seek(0)
+                    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_file:
+                        temp_file.write(e.content.read().decode('utf-8'))
+                        temp_file.flush()
+                        state.qa_state.pdf_path = temp_file.name
+                        state.qa_state.pdf_name = e.name
+            except Exception as e:
+                return ("Failed")
+            state.qa_state.is_upload = True
+
+    ui.upload(
+        on_upload=handle_upload,
+        on_multi_upload=handle_multiple_upload,
+        auto_upload=True,
+        label='Upload Text',
+    ).props('accept=".pdf"')
+
 
     return state
 
 
-def render_chroma():
-    return
-
-
-def render_graph():
-    graph.visualize()
-    st.graphviz_chart(graph.get_graphviz())

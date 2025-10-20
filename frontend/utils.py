@@ -10,7 +10,7 @@ def render_log(logStore, log_placeholder):
                 st.write(log)
                 st.write("**********")
 
-
+"""
 def render_message(messages, message_placeholder):
     if hasattr(message_placeholder, "container"):
         with message_placeholder.container():
@@ -22,3 +22,5 @@ def render_message(messages, message_placeholder):
                 elif isinstance(message, AIMessage):
                     with placeholder.chat_message("assistant"):
                         st.markdown(message.content)
+"""
+

@@ -1,13 +1,14 @@
-import streamlit as st
-from backend.model.states.StateManager import StateManager
-from frontend.home_ui import render_main_section, render_sidebar
-from typing import Any
 
+from backend.model.states.StateManager import StateManager
+from frontend import home_ui
+from typing import Any
+import tempfile
 from langgraph.checkpoint.serde import jsonplus
 from langgraph.checkpoint.serde.jsonplus import _msgpack_default
 from langgraph.checkpoint.serde.jsonplus import _option
 from langgraph.checkpoint.serde.jsonplus import ormsgpack
-
+from nicegui import ui, app, events
+from backend.model.states.graph_state.GraphState import GraphState
 
 def message_to_dict(msg):
     """
@@ -36,20 +37,18 @@ def monkey_patch():
     setattr(jsonplus, "_msgpack_enc", _msgpack_enc)
 
 
+
+
+
+
+
+state = StateManager.get_state()
+@ui.page("/")
 def start():
     monkey_patch()
-    if "state" not in st.session_state:
-        st.session_state.state = StateManager.get_state()
-
-    if "message_placeholder" not in st.session_state:
-        st.session_state.message_placeholder = st.empty()
-
-    state = st.session_state.state
-
-    render_sidebar(state)
-    new_state = render_main_section(state)
-
-    st.session_state.state = new_state
+    #home_ui.render_sidebar(state)
+    new_state = home_ui.render_main_section(state)
 
 
-start()
+
+ui.run()

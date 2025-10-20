@@ -11,7 +11,7 @@ from backend.utils import get_user_input, log_decorator
 import streamlit as st
 from constants import SYSTEM_PROMPT_LIST
 from backend.tools.get_tool_registry import get_tool_registry
-
+from time import sleep
 load_dotenv()
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
@@ -25,9 +25,9 @@ async def tool_agent_async(state: GraphState) -> GraphState:
 
     system_prompt = SYSTEM_PROMPT_LIST.tool_router_prompt.format(
         user_input=user_input, tool_names={bind_tool["name"] for bind_tool in bind_tools} or "none")
-
+    sleep(5)
     response = await client.chat(
-        OLLAMA_MODEL,
+        "qwen3:8b",
         messages=[{"role": "system", "content": system_prompt},
                   {"role": "user", "content": user_input}],
         tools=[bind_tool["tool"] for bind_tool in bind_tools],
@@ -40,8 +40,8 @@ async def tool_agent_async(state: GraphState) -> GraphState:
 
 
 @log_decorator
-def tool_agent(state: GraphState) -> GraphState:
-    return asyncio.run(tool_agent_async(state))
+async def tool_agent(state: GraphState) -> GraphState:
+    return await tool_agent_async(state)
 
 
 @log_decorator
@@ -65,7 +65,7 @@ def get_bind_tools(state: GraphState) -> list:
 @log_decorator
 def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
     tool_name_args = get_tool_name_list(message, state)
-
+    new_state = ""
     for tool_name, args in tool_name_args:
         tool_to_invoke = next(
             bind_tool for bind_tool in bind_tools if bind_tool["name"] == tool_name)

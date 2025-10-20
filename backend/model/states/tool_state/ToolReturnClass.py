@@ -7,4 +7,4 @@ from backend.model.states.tool_state.ToolMetaDict import ToolMetaDict
 class ToolReturnClass:
     state: GraphState
     agent_response: str = ""
-    meta: ToolMetaDict = ToolMetaDict()
+    meta: ToolMetaDict = ToolMetaDict
