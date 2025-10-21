@@ -1,7 +1,7 @@
 import os
 import psycopg
 from typing import List, Optional
-from src.utils import RawReview
+from agents.classification_agent.src.utils import RawReview
 
 # Database configuration
 import getpass

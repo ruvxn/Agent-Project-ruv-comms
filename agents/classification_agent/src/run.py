@@ -1,4 +1,4 @@
-from src.graph import wf
+from agents.classification_agent.src.graph import wf
 
 if __name__ == "__main__":
     enriched = wf.invoke({})  

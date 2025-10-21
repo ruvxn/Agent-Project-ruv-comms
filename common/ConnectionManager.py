@@ -34,7 +34,7 @@ class ConnectionManager:
             raise ConnectionError("Websocket not connected")
 
         await self._websocket.send(json.dumps({
-            "type": "register",
+            "message_type": "register",
             "agent_id": self.agent_id,
             "description": self.description,
             "capabilities": self.capabilities,
@@ -43,17 +43,13 @@ class ConnectionManager:
         registration_response = await self._websocket.recv()
         logging.info(registration_response)
 
-    async def send(self, message, recipient_id):
-        logging.info(f"Sending message: {message}")
+    async def send(self, payload):
+        logging.info(f"Sending message")
         if not self._websocket:
             logging.error("Websocket not connected")
             return "Websocket not connected"
 
-        payload = {
-            "sender_id": self.agent_id,
-            "recipient_id": recipient_id,
-            "message": message
-        }
+
         await self._websocket.send(json.dumps(payload))
 
     async def start_listening(self, message_handler):

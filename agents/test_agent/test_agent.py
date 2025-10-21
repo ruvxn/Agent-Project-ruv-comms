@@ -29,7 +29,7 @@ class AgentManager():
             logging.info(f"Worker thread picked up {task_data}")
             message = ""
             if isinstance(task_data, dict):
-                message = f"You have a new message from: {task_data['sender']}\n+ Message:{task_data['message']}"
+                message = f"You have a new message from: {task_data['sender_id']}\n+ Message:{task_data['message']}"
             elif isinstance(task_data, str):
                 message = task_data
             else:
@@ -46,7 +46,7 @@ class AgentManager():
             try:
                 async with websockets.connect("ws://localhost:8765") as websocket:
                     await websocket.send(json.dumps({
-                        "type": "register",
+                        "message_type": "register",
                         "id": "DatabaseReceiving",
                     }))
                     registration_response = await websocket.recv()
@@ -81,7 +81,7 @@ class AgentManager():
             "3.  **Formulate a Reply**: Once you have the result from your tools, prepare a clear and concise message containing the answer.\n"
             "4.  **Reply to the Sender**: **You MUST always reply.** Use the 'ContactOtherAgents' tool to send the result back to the original agent who contacted you. This is your final step."
         )
-        await self.chat_manager.setup(tools=tools, prompt=description)
+        await self.chat_manager.setup(tools=tools, prompt=description, type="web")
         asyncio.create_task(self.worker())
 
 

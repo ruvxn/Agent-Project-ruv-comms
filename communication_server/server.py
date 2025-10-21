@@ -32,12 +32,13 @@ class AgentServer:
         recipient_ws = self.agent_registry.get(recipient_id)
         if recipient_ws:
             try:
+                logging.info(f"Forwarding message", message_type, sender_id, recipient_id, message)
                 await recipient_ws.send(json.dumps({
                     "message_type": message_type,
-                    "sender": sender_id,
+                    "sender_id": sender_id,
                     "message": message,
                 }))
-                logging.info(f"Agent {sender_id} sent a message to {recipient_id}.")
+                logging.info(f"Agent {message_type}{sender_id} sent a message to {recipient_id}.")
             except ConnectionClosedError:
                 logging.warning(f"Agent {sender_id} sending {message} failed")
         else:
@@ -115,13 +116,14 @@ class AgentServer:
             try:
                 registration_message = await websocket.recv()
                 data = json.loads(registration_message)
-                if data.get("type") == "register" and "agent_id" in data:
+                if data.get("message_type") == "register" and "agent_id" in data:
                     agent_id = data["agent_id"]
                     logging.info(f"Client Connected and registering: {data['agent_id']}")
                     await self.update_directory_agent(message=data, websocket=websocket)
                     await websocket.send(json.dumps({"status": "registration successful"}))
                 else:
                     await websocket.close(1008, json.dumps({"status": "registration failed"}))
+
                     return
                 async for message in websocket:
                     try:
@@ -129,10 +131,10 @@ class AgentServer:
                         message_type = data.get("message_type")
                         recipient_id = data.get("recipient_id")
                         sender_id = data.get("sender_id")
-                        message = data.get("message")
+                        message_content = data.get("message")
                         if recipient_id and message:
-                            item = (message_type, recipient_id, sender_id, message)
-                            logging.info(f"Agent {sender_id} sending {message}")
+                            item = (message_type, recipient_id, sender_id, message_content)
+                            #logging.info(f"Agent {sender_id} sending {message}")
                             await self.queue.put(item)
                         else:
                             logging.error(f"Invalid message format: {message}")

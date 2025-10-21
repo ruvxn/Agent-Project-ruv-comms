@@ -4,6 +4,7 @@ import logging
 from pydantic import BaseModel, Field, create_model, PrivateAttr
 from enum import Enum
 from common.ConnectionManager import ConnectionManager
+import json
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
@@ -26,15 +27,18 @@ class Communicate(BaseTool):
     async def _arun(self, recipient_id: str, message: str):
         logging.info(f"ARUN id: {recipient_id}")
         logging.info(f"Web connection id: {self.web_connection.agent_id}")
-        message_to_send = {
-            'message_type': 'message',
-            'recipient_id': recipient_id,
-            'sender_id': self.sender_id,
-            'message': message
 
-        }
+        message_to_send = {
+                    'message_type': 'message',
+                    'recipient_id': recipient_id,
+                    'sender_id': self.sender_id,
+                    'message': message
+
+                    }
+
         try:
-            await self.web_connection.send(message_to_send, recipient_id)
+            logging.info(f"Sending message: {message_to_send}")
+            await self.web_connection.send(message_to_send)
         except Exception as e:
             logging.error(f"Failed to connect: {e}")
             return

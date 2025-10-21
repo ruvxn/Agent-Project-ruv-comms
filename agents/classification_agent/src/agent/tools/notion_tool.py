@@ -8,9 +8,9 @@ import json
 from typing import List, Optional
 from langchain_core.tools import BaseTool
 
-from src.utils import RawReview, DetectedError, EnrichedError, SentimentData, hash_error
-from src.nodes.notion_logger import upsert_enriched_error
-from src.database import mark_reviews_processed
+from agents.classification_agent.src.utils import RawReview, DetectedError, EnrichedError, SentimentData, hash_error
+from agents.classification_agent.src.nodes.notion_logger import upsert_enriched_error
+from agents.classification_agent.src.database import mark_reviews_processed
 
 
 class NotionTool(BaseTool):
