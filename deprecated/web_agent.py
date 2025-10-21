@@ -17,9 +17,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
 
-class AgentManager():
-    """Manages the agent, however needs to be replaced by the AgentManager
-        class from the common directory to reduce duplicate code"""
+class ApplicationManager():
     def __init__(self):
         self.connection_manager = ConnectionManager(
             agent_id="WebAgent",
@@ -51,7 +49,26 @@ class AgentManager():
     async def message_handler(self, message: dict):
         await self.task_queue.put(message)
 
-
+    async def messanger(self):
+        while True:
+            try:
+                async with websockets.connect("ws://localhost:8765") as websocket:
+                    await websocket.send(json.dumps({
+                        "type": "register",
+                        "id": "WebAgentReceiving",
+                    }))
+                    registration_response = await websocket.recv()
+                    logging.info(f"Received registration response: {registration_response}")
+                    async for message in websocket:
+                        message = json.loads(message)
+                        message = f"You have a message from:{message["sender"]}\n+ Message:{message["message"]}"
+                        await self.task_queue.put(message)
+            except (websockets.exceptions.ConnectionClosedError, ConnectionResetError) as error:
+                logging.error(f"Connection closed because: {error}")
+                await asyncio.sleep(5)
+            except Exception as error:
+                logging.error(f"Unexpected error: {error}")
+                await asyncio.sleep(5)
 
     async def startup(self):
         try:
@@ -82,9 +99,9 @@ class AgentManager():
         tools = [websearch, webscrape, datetime, csv, communicate]
         asyncio.create_task(self.worker())
         #asyncio.create_task(self.messanger())
-        await self.chat_manager.setup(tools = tools, prompt=description)
+        await self.chat_manager.setup(tools = tools, description=description)
 
-application = AgentManager()
+application = ApplicationManager()
 @ui.page("/")
 def main():
     async def handle_submit():

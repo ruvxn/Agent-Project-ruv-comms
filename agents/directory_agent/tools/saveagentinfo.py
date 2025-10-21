@@ -4,7 +4,11 @@ from pydantic import BaseModel, Field
 from typing import Literal, List
 import os
 from common.stores.ClientStore import ClientStore
+import logging
 
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(message)s')
 
 
 class AgentRegistrationInput(BaseModel):
@@ -18,28 +22,30 @@ class AgentRegistrationInput(BaseModel):
     capabilities: List[str] = Field(
         description="A list of the agents capabilities."
     )
-    status: Literal["AVAILABLE", "BUSY", "OFFLINE"] = Field(
-        description="The current operational status of the agent."
-    )
+
 
 class RegisterAgent(BaseTool):
     """Tool class that inherits from base tool"""
-    name: str = "register_agent"
+    name: str = "RegisterAgent"
     description: str = "A tool that allows you to save agent information in a database"
     args_schema: type[BaseModel] = AgentRegistrationInput
     def _run(self,
              agent_id: str,
              description: str,
              capabilities: List[str],
-             status: Literal["AVAILABLE", "BUSY", "OFFLINE"]
              ) -> str:
         client = ClientStore()
         data = {
             "agent_id": agent_id,
             "description": description,
             "capabilities": capabilities,
-            "status": status
+            "status": "AVAILABLE"
         }
         result = client.store(data=data)
-        return ""
+        logging.info("register tool called")
+        logging.info(result)
+        if result is None:
+            return "Failed to save agent information"
+        else:
+            return "Agent information saved successfully"
 

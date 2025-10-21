@@ -1,12 +1,7 @@
-from langchain_core.tools import BaseTool
 import logging
-from pydantic import BaseModel, create_model, Field
 from typing import Any, Literal, List
-import os
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import VectorParams, Distance
-from openai import OpenAI
-from enum import Enum
 from common.stores.Embedding import Embedding
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
@@ -74,7 +69,33 @@ class ClientStore():
         ).model_dump()
 
         agent_info = search_result
-        return None
+        return agent_info
+
+    def update(self, agent_id: str, status: str) -> str:
+
+        try:
+            update_filter = models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="agent_id",
+                        match=models.MatchValue(value=agent_id)
+                    )
+                ]
+            )
+
+            self.client.set_payload(
+                collection_name=self.collection_name,
+                payload={
+                    "status": status
+                },
+                points=update_filter,
+                wait=True,
+            )
+            return f"Update successful"
+        except Exception as e:
+            return f"Update failed: {e}"
+
+
 
 
 

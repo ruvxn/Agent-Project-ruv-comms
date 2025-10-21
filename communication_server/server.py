@@ -16,10 +16,13 @@ class AgentServer:
         self.agent_registry = {}
         self.queue = asyncio.Queue(maxsize=1000)
         logging.info("Agent server started.")
+
     async def unregister_agent(self, agent_id:str):
         if agent_id in self.agent_registry:
             del self.agent_registry[agent_id]
+            await self.update_directory_agent(agent_id, None)
             logging.info(f"Agent {agent_id} was unregistered.")
+
     async def register_agent(self, agent_id:str, websocket: ClientConnection):
         self.agent_registry[agent_id] = websocket
         logging.info(f"Agent {agent_id} was registered.")
@@ -30,6 +33,7 @@ class AgentServer:
         if recipient_ws:
             try:
                 await recipient_ws.send(json.dumps({
+                    "message_type": message_type,
                     "sender": sender_id,
                     "message": message,
                 }))
@@ -48,36 +52,62 @@ class AgentServer:
             except Exception as e:
                 logging.error(f"Error sending message: {e}")
 
-    async def register_with_agent(self, registration_message, websocket: websockets.ClientProtocol):
-        data = registration_message
-        try:
-            agent_id = data["agent_id"]
-        except KeyError:
-            logging.error(f"Agent {data["agent_id"]} is missing agent_id.")
-            return
-        self.agent_registry[agent_id] = websocket
-        if agent_id == "DirectoryAgent":
-            logging.info(f"Agent {agent_id} was registered.")
-            return
-        directory_ws = self.agent_registry.get("DirectoryAgent")
-
-        if directory_ws:
-            logging.info(f"Notifying Directory Agent about new agent: {agent_id}")
-            notification = {
-                "type": "agent_registration",
-                "agent_id": agent_id,
-                "description": data.get("description", "No description provided."),
-                "capabilities": data.get("capabilities", [])
-            }
+    async def update_directory_agent(self, message, websocket: websockets.ClientProtocol | None):
+        data = message
+        if websocket is not None:
             try:
+                agent_id = data["agent_id"]
+            except KeyError:
+                logging.error(f"Agent {data["agent_id"]} is missing agent_id.")
+                return
+            self.agent_registry[agent_id] = websocket
+            if agent_id == "DirectoryAgent":
                 logging.info(f"Agent {agent_id} was registered.")
-                await directory_ws.send(json.dumps(notification))
-                #logging.info(f"Agent {agent_id} was registered.")
-            except ConnectionClosedError:
-                logging.info(f"Agent {agent_id} sending {notification} failed")
-            return
+                return
+            directory_ws = self.agent_registry.get("DirectoryAgent")
+
+            if directory_ws:
+                logging.info(f"Notifying Directory Agent about new agent: {agent_id}")
+                notification = {
+                    "message_type": "registration",
+                    "agent_id": agent_id,
+                    "description": data.get("description", "No description provided."),
+                    "capabilities": data.get("capabilities", [])
+                }
+                try:
+                    logging.info(f"Agent {agent_id} was registered.")
+                    await directory_ws.send(json.dumps(notification))
+                    # logging.info(f"Agent {agent_id} was registered.")
+                except ConnectionClosedError:
+                    logging.info(f"Agent {agent_id} sending {notification} failed")
+                return
+            else:
+                logging.info(f"Agent {agent_id} was registered.")
+        elif websocket is None:
+            try:
+                agent_id = data
+                directory_ws = self.agent_registry.get("DirectoryAgent")
+                if directory_ws:
+                    logging.info(f"Notifying Directory Agent that {agent_id} disconnected")
+                    notification = {
+                        "message_type": "update",
+                        "agent_id": agent_id,
+                    }
+                    try:
+                        await directory_ws.send(json.dumps(notification))
+                    except ConnectionClosedError:
+                        logging.info(f"Agent {agent_id} sending {notification} failed")
+                    finally:
+                        logging.info(f"Agent {agent_id} was disconnected.")
+                        return
+            except Exception as e:
+                logging.info(f"Error sending message: {e}")
+                return
         else:
-            logging.info(f"Agent {agent_id} was registered.")
+            logging.info("Wrong message type sent to websocket")
+            return
+
+
 
     async def connection_handler(self, websocket):
             #logging.info("A client connected")
@@ -88,7 +118,7 @@ class AgentServer:
                 if data.get("type") == "register" and "agent_id" in data:
                     agent_id = data["agent_id"]
                     logging.info(f"Client Connected and registering: {data['agent_id']}")
-                    await self.register_with_agent(registration_message=data, websocket=websocket)
+                    await self.update_directory_agent(message=data, websocket=websocket)
                     await websocket.send(json.dumps({"status": "registration successful"}))
                 else:
                     await websocket.close(1008, json.dumps({"status": "registration failed"}))

@@ -15,9 +15,9 @@ class ChatManager:
         self.connection = None
         self.websocket = None
         self.name = name
-    async def setup(self, tools: List[Any], description: str):
+    async def setup(self, tools: List[Any], prompt: str):
         logging.info("ChatManager setup")
-        self.agent = Agent(tools=tools, name=self.name, description=description)
+        self.agent = Agent(tools=tools, name=self.name, prompt=prompt)
         self.connection = await aiosqlite.connect(f'db/{self.name}.db')
         self.graph = await self.agent.graph_builder(self.connection)
 
