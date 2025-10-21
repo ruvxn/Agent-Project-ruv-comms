@@ -15,7 +15,7 @@ class RawReview(BaseModel):
     rating: int
 
 #detetcted error LLM output before it is normalised
-# error_type is now any list of strings (LLM-generated categories)
+# error_type is now any list of strings LLM-generated categories
 # severity must be one of: Critical, Major, Minor, Suggestion, None
 class DetectedError(BaseModel):
     error_summary: str

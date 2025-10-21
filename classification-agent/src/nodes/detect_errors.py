@@ -2,14 +2,16 @@ import os
 import json
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_community.chat_models import ChatOllama
+from langchain_anthropic import ChatAnthropic
 from src.utils import RawReview, DetectedError
 
-# rmeoved hardcoded error types - llm now generates categories based on context
+# using claude for better accuracy - less hallucination than ollama
 
-SYSTEM = """You are an expert at analyzing customer reviews and identifying issues.
+SYSTEM = """You are an expert at analyzing customer reviews and identifying REAL issues.
 
-Task: Given a customer review, extract ZERO OR MORE concrete PRODUCT/SERVICE PROBLEMS OR FEATURE/ENHANCEMENT REQUESTS.
+Task: Given a customer review, extract ZERO OR MORE concrete PRODUCT/SERVICE PROBLEMS OR FEATURE/ENHANCEMENT REQUESTS that are ACTUALLY MENTIONED in the review text.
+
+**CRITICAL**: ONLY extract issues that are EXPLICITLY stated in the review. DO NOT infer or hallucinate problems. If the review is positive or neutral with no issues, return empty errors array.
 
 **IMPORTANT**: First understand what type of business this review is about, then generate appropriate category names.
 
@@ -93,9 +95,14 @@ FEWSHOT_ASSISTANT_2 = """{
 }"""
 
 
-def make_llm(ollama_model: str = "llama3.2:latest"):
-    #force JSON output from Ollama
-    return ChatOllama(model=ollama_model, temperature=0, format="json")
+def make_llm(model: str = "claude-3-5-sonnet-20241022"):
+    # use claude for better accuracy
+    from src.config import ANTHROPIC_API_KEY
+    return ChatAnthropic(
+        model=model,
+        anthropic_api_key=ANTHROPIC_API_KEY,
+        temperature=0
+    )
 
 def _json_load(s: str) -> dict:
     if not s:
@@ -188,23 +195,19 @@ def _fallback_suggestion(text: str) -> List[DetectedError]:
 
 def detect_errors_with_ollama(
     review: RawReview,
-    ollama_model: str = "llama3.2:latest",
+    ollama_model: str = "claude-3-5-sonnet-20241022",  # now uses claude by default
 ) -> List[DetectedError]:
     force_fallback = os.getenv("USE_FALLBACK_DETECT", "false").lower() in {"1", "true", "yes"}
 
-    # Include BOTH few shots before the real review then the user template
+    # simpler prompt for claude - no few shots to prevent contamination
     full_prompt = f"""{SYSTEM}
 
-{FEWSHOT_USER}
+Review to analyze:
+```
+{review.review[:4000]}
+```
 
-{FEWSHOT_ASSISTANT}
-
-{FEWSHOT_USER_2}
-
-{FEWSHOT_ASSISTANT_2}
-
-{USER.format(review_text=review.review[:4000])}
-"""
+Return ONLY the JSON object with business_type and errors array. If no issues found, return {{"business_type": "...", "errors": []}}"""
 
     raw = ""
 
@@ -214,7 +217,7 @@ def detect_errors_with_ollama(
             resp = llm.invoke(full_prompt)
             raw = (getattr(resp, "content", "") or "").strip()
         except Exception as exc:
-            print(f" Ollama call failed ({exc}); using heuristic detection instead.")
+            print(f" Claude call failed ({exc}); using heuristic detection instead.")
             force_fallback = True
 
     if force_fallback:

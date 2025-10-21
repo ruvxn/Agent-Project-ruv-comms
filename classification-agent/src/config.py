@@ -29,3 +29,10 @@ AGENT_TEMPERATURE = float(os.getenv("AGENT_TEMPERATURE", "0"))
 AGENT_CHECKPOINT_DB = os.getenv("AGENT_CHECKPOINT_DB", "classification_agent.db")
 AGENT_VERBOSE = os.getenv("AGENT_VERBOSE", "true").lower() in ("true", "1", "yes")
 AGENT_MAX_ITERATIONS = int(os.getenv("AGENT_MAX_ITERATIONS", "10"))
+
+# Memory Configuration (local, no docker/api needed)
+MEMORY_ENABLED = os.getenv("MEMORY_ENABLED", "false").lower() in ("true", "1", "yes")
+MEMORY_STORAGE_PATH = os.getenv("MEMORY_STORAGE_PATH", "./memory_storage")
+
+# Embeddings (local sentence-transformers, no api key needed)
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")

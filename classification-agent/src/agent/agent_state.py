@@ -17,9 +17,16 @@ class ReviewAgentState(TypedDict):
     last_sentiment_analysis: Optional[str]  
     last_review_ids: Optional[List[str]]     
 
-    # plan and reason 
-    plan: Optional[str]                     
-    user_intent: Optional[str]             
+    # plan and reason
+    plan: Optional[str]
+    user_intent: Optional[str]
+
+    # critique for self-review loop
+    critique: Optional[str]
+
+    # long term memory
+    retrieved_memories: Optional[List[dict]]
+    memory_context: Optional[str]
 
 #empty  init state for new chat
 def create_initial_state() -> ReviewAgentState:
@@ -30,5 +37,6 @@ def create_initial_state() -> ReviewAgentState:
         last_sentiment_analysis=None,
         last_review_ids=None,
         plan=None,
-        user_intent=None
+        user_intent=None,
+        critique=None
     )

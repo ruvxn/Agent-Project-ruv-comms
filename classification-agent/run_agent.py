@@ -5,6 +5,13 @@ from typing import Optional
 import asyncio
 
 
+def cleanup_terminal():
+    """Flush output buffers to ensure clean exit"""
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except Exception:
+        pass
 
 
 def print_banner():
@@ -85,6 +92,7 @@ async def run_interactive_session(thread_id, graph):
             if user_input.lower() in ['exit', 'quit', 'q']:
                 print("\nGoodbye! Your conversation is saved.")
                 print(f"Resume with: python run_agent.py --thread-id {thread_id}\n")
+                cleanup_terminal()
                 break
 
             if user_input.lower() == 'clear':
@@ -114,6 +122,7 @@ async def run_interactive_session(thread_id, graph):
         except KeyboardInterrupt:
             print("\n\nInterrupted. Goodbye!")
             print(f"Resume with: python run_agent.py --thread-id {thread_id}\n")
+            cleanup_terminal()
             break
 
         except Exception as e:
@@ -130,6 +139,9 @@ async def main():
 Examples:
   python run_agent.py                              # Start new conversation
   python run_agent.py --thread-id my_session       # Resume conversation
+  python run_agent.py --enable-critique            # Enable self-review loop
+  python run_agent.py --enable-memory              # Enable long-term memory
+  python run_agent.py --enable-memory --enable-critique  # Both features
 
 Commands:
   clear    Start new conversation
@@ -141,6 +153,16 @@ Commands:
         type=str,
         default=None,
         help="Thread ID to resume a previous conversation"
+    )
+    parser.add_argument(
+        "--enable-critique",
+        action="store_true",
+        help="Enable the critique/self-review loop for better quality responses"
+    )
+    parser.add_argument(
+        "--enable-memory",
+        action="store_true",
+        help="Enable long-term memory (learns from past interactions)"
     )
 
     args = parser.parse_args()
@@ -155,15 +177,30 @@ Commands:
 
     # Build and compile the agent graph with memory checkpointing
     from src.agent.agent_graph import create_agent_app
-    agent_app = await create_agent_app()
+    agent_app = await create_agent_app(
+        enable_critique=args.enable_critique,
+        enable_memory=args.enable_memory
+    )
 
     # Run interactive session
     try:
         await run_interactive_session(thread_id=args.thread_id, graph=agent_app)
     except Exception as e:
         print(f"\nFatal error: {str(e)}\n")
+        cleanup_terminal()
         sys.exit(1)
+    finally:
+        # Close database connection if it exists
+        if agent_app and hasattr(agent_app, 'checkpointer') and hasattr(agent_app.checkpointer, 'conn'):
+            try:
+                await agent_app.checkpointer.conn.close()
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    finally:
+        # Ensure cleanup runs even if asyncio.run() fails
+        cleanup_terminal()
