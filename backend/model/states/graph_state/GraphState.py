@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 from pydantic import BaseModel, Field, root_validator
 from backend.model.states.graph_state.ConfigState import ConfigState
 from backend.model.states.graph_state.SummaryState import SummaryState
@@ -56,6 +56,7 @@ class GraphState(BaseModel):
     logs: Annotated[LogStore, merge_logs] = Field(default_factory=LogStore)
     graph_config: ConfigState = Field(default_factory=ConfigState)
     collection_names_list: list[str] = Field(default_factory=list)
+    tool_outputs: list[dict[str, Any]] = []
 
     model_config = {
         "arbitrary_types_allowed": True,

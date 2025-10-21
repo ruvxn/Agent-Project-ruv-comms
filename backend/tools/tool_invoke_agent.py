@@ -6,6 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 import os
 import ollama
 from backend.model.states.graph_state.GraphState import GraphState
+from backend.tools.bind_tool.finalized_tool import finalized_tool
 from backend.tools.command import command
 from backend.utils import get_user_input, log_decorator
 import streamlit as st
@@ -65,13 +66,41 @@ def get_bind_tools(state: GraphState) -> list:
 @log_decorator
 def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
     tool_name_args = get_tool_name_list(message, state)
+    new_state = state
 
     for tool_name, args in tool_name_args:
-        tool_to_invoke = next(
-            bind_tool for bind_tool in bind_tools if bind_tool["name"] == tool_name)
+        new_state = execute_tool(tool_name, args, bind_tools, new_state)
 
-        result = tool_to_invoke["invoke"].invoke(args)
-        new_state = command(tool_name, result)
+    finalized_result = finalized_tool().invoke({"state": new_state})
+    final_state = command("chat_tool", finalized_result)
+
+    return final_state
+
+
+def execute_tool(tool_name, args, bind_tools, state: GraphState) -> GraphState:
+    tool_to_invoke = next(
+        (t for t in bind_tools if t["name"] == tool_name), None
+    )
+    if tool_to_invoke is None:
+        state.logs.append(f"[execute_tool] Tool {tool_name} not found")
+        return state
+
+    if "tools" in args and isinstance(args["tools"], list):
+        nested_tools = args["tools"]
+        for nested in nested_tools:
+            nested_name = nested.get("tool_name")
+            if nested_name == tool_name:
+                state.logs.append(
+                    f"[execute_tool] Skipped self-nesting: {tool_name}")
+                continue
+            nested_args = nested.get("args", {})
+            nested_args["state"] = state
+            state = execute_tool(nested_name, nested_args, bind_tools, state)
+
+    result = tool_to_invoke["invoke"].invoke(args)
+    new_state = command(tool_name, result)
+    state.logs.append(f"[execute_tool] Executing {tool_name}")
+
     return new_state
 
 

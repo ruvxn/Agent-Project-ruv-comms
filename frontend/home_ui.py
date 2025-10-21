@@ -21,6 +21,7 @@ FILE_UPLOADER_PATH = os.getenv("FILE_UPLOADER_PATH")
 
 @traceable
 def render_main_section(state: GraphState) -> GraphState:
+
     if not getattr(state.messages, "message_placeholder", None):
         state.messages.message_placeholder = st.session_state.message_placeholder
 
@@ -36,9 +37,10 @@ def render_main_section(state: GraphState) -> GraphState:
 
         st.session_state.initialized = True
 
+    user_input = st.chat_input("Type Message")
+
     state = render_file_uploader(state)
 
-    user_input = st.chat_input("Type Message")
     new_state = state
 
     if user_input:

@@ -8,11 +8,12 @@ from langgraph.checkpoint.serde.jsonplus import _msgpack_default
 from langgraph.checkpoint.serde.jsonplus import _option
 from langgraph.checkpoint.serde.jsonplus import ormsgpack
 
+# Reference from: https://github.com/langchain-ai/langgraph/issues/4956#issuecomment-3135374853
+
 
 def message_to_dict(msg):
     """
     Recursively convert a message or object into a dict/str (safe for serialization).
-    Reference from: https://github.com/langchain-ai/langgraph/issues/4956#issuecomment-3135374853
     """
     if hasattr(msg, "to_dict"):
         return msg.to_dict()
