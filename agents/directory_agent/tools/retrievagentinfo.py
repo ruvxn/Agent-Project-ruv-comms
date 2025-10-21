@@ -3,7 +3,11 @@ import logging
 from pydantic import BaseModel, create_model, Field
 import os
 from common.stores.ClientStore import ClientStore
+import logging
 
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(levelname)s %(message)s')
 
 
 
@@ -21,9 +25,11 @@ class ReteriveAgent(BaseTool):
     
     def _run(self, description: str) -> dict | str | None:
         client = ClientStore()
+        logging.info("retrieve called")
         data = {
             "description": description,
         }
         result = client.get(quary=data)
+        logging.info(f"{result}")
         return result
 
