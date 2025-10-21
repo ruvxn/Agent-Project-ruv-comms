@@ -3,7 +3,7 @@ import json
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_anthropic import ChatAnthropic
-from src.utils import RawReview, DetectedError
+from agents.classification_agent.src.utils import RawReview, DetectedError
 
 # using claude for better accuracy - less hallucination than ollama
 

@@ -1,34 +1,33 @@
 from typing import Literal
-from langchain_anthropic import ChatAnthropic
+from langchain.chat_models import init_chat_model
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver    # type: ignore 
 from langchain_core.messages import ToolMessage                  # type: ignore
 import aiosqlite                                                     # type: ignore
-
-from src.config import (
-    ANTHROPIC_API_KEY,
-    AGENT_MODEL,
-    AGENT_TEMPERATURE,
+from typing import List, Any
+from agents.classification_agent.src.config import (
     AGENT_CHECKPOINT_DB,
     AGENT_VERBOSE
 )
-from src.agent.agent_state import ReviewAgentState
-from src.agent.prompts import get_system_prompt
-from src.agent.tools import (
-    classify_review_criticality,
-    analyze_review_sentiment,
-    log_reviews_to_notion,
+from agents.classification_agent.src.agent.agent_state import ReviewAgentState
+from common.tools.date_time import DateTime
+"""
+from agents.classification_agent.src.agent.tools import (
     get_current_datetime
 )
-from src.agent.tools.memory_tool import memory_search_tool
-from src.memory.qdrant_store import QdrantStore
-from src.memory.memory_manager import ClaudeMemoryManager
+"""
+
+
+from agents.classification_agent.src.agent.prompts import get_system_prompt
+from agents.classification_agent.src.agent.tools.memory_tool import memory_search_tool
+from agents.classification_agent.src.memory.qdrant_store import QdrantStore
+from agents.classification_agent.src.memory.memory_manager import ClaudeMemoryManager
 
 
 class ReviewAgent:
     """A Review Classification Agent class for analyzing customer reviews"""
 
-    def __init__(self, name: str = "ReviewAgent", description: str = None, enable_critique: bool = False, enable_memory: bool = False):
+    def __init__(self, name: str = "ReviewAgent", description: str = None, enable_critique: bool = False, enable_memory: bool = False, tools: List[Any] | None = None):
         """
         Initialize the Review Classification Agent
 
@@ -42,22 +41,22 @@ class ReviewAgent:
         self.description = description or get_system_prompt()
         self.enable_critique = enable_critique
         self.enable_memory = enable_memory
-
+        self.llm = init_chat_model("gpt-4o-mini")
         # Initialize Claude LLM
+        """
+        I don't have access to this
         self.llm = ChatAnthropic(
             model=AGENT_MODEL,
             anthropic_api_key=ANTHROPIC_API_KEY,
             temperature=AGENT_TEMPERATURE,
         )
+        """
+
 
         # Define available tools
-        self.tools = [
-            classify_review_criticality,
-            analyze_review_sentiment,
-            log_reviews_to_notion,
-            get_current_datetime
-        ]
-
+        self.tools = tools
+        datetime_tool = DateTime()
+        self.tools.append(datetime_tool)
         # add memory components if enabled
         if self.enable_memory:
             try:
@@ -475,7 +474,7 @@ async def build_agent_graph() -> StateGraph:
     Legacy function - builds agent graph without compilation
     Kept for backward compatibility
     """
-    from src.agent.agent_state import ReviewAgentState
+    from agents.classification_agent.src.agent.agent_state import ReviewAgentState
 
     graph = StateGraph(ReviewAgentState)
 

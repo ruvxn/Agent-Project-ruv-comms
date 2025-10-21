@@ -28,7 +28,7 @@ class AgentManager():
             logging.info(f"Worker thread picked up {task_data}")
             message = ""
             if task_data["message_type"] == "message":
-                message = f"You have a new message from: {task_data['agent_id']}\n+ Message:{task_data['message']}"
+                message = f"You have a new message from: {task_data['sender_id']}\n+ Message:{task_data['message']}"
             elif task_data["message_type"] == "registration":
                 message = (f"You have a new agent to register:{task_data["agent_id"]}\n+ "
                            f"Description:{task_data["description"]}\n+"
@@ -132,7 +132,7 @@ class AgentManager():
     ever attempt to fulfill a task request yourself.** Your only output is a message to another agent. You MUST ALWAYS reply.
 
            """)
-        await self.chat_manager.setup(tools=tools, prompt=description)
+        await self.chat_manager.setup(tools=tools, prompt=description, type="web")
         asyncio.create_task(self.worker())
 
 

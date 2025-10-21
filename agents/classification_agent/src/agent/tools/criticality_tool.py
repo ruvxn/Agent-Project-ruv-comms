@@ -8,10 +8,10 @@ import json
 from typing import Optional, List, Any, Dict
 from langchain_core.tools import BaseTool
 
-from src.config import AGENT_MODEL
-from src.utils import RawReview
-from src.nodes.detect_errors import detect_errors_with_ollama
-from src.database import load_unprocessed_reviews, get_connection
+from agents.classification_agent.src.config import AGENT_MODEL
+from agents.classification_agent.src.utils import RawReview
+from agents.classification_agent.src.nodes.detect_errors import detect_errors_with_ollama
+from agents.classification_agent.src.database import load_unprocessed_reviews, get_connection
 
 
 class CriticalityTool(BaseTool):
@@ -52,7 +52,7 @@ class CriticalityTool(BaseTool):
             use_database = os.getenv("USE_DATABASE", "false").lower() == "true"
 
         if data_path is None:
-            from src.config import DATA_PATH
+            from agents.classification_agent.src.config import DATA_PATH
             data_path = DATA_PATH
 
         super().__init__(
@@ -127,7 +127,7 @@ class CriticalityTool(BaseTool):
             return load_unprocessed_reviews(batch_size=limit)
         else:
             # Fallback to CSV
-            from src.nodes.load_reviews import load_reviews
+            from agents.classification_agent.src.nodes.load_reviews import load_reviews
             all_reviews = load_reviews(self.data_path)
             return all_reviews[:limit]
 

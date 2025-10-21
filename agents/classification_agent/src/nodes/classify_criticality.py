@@ -3,7 +3,7 @@
 # Keeping for backward compatibility but it's no longer used in the pipeline
 
 from typing import List
-from src.utils import DetectedError
+from agents.classification_agent.src.utils import DetectedError
 
 #keyword buckets for classificaiton
 BUCKETS: dict[str, List[str]] = {

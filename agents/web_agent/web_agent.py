@@ -38,7 +38,7 @@ class AgentManager():
             logging.info(type(self.chat_manager))
             message = ""
             if isinstance(task_data, dict):
-                message = f"You have a new message from: {task_data['sender']}\n+ Message:{task_data['message']}"
+                message = f"You have a new message from: {task_data['sender_id']}\n+ Message:{task_data['message']}"
             elif isinstance(task_data, str):
                 message = task_data
             else:
@@ -82,7 +82,7 @@ class AgentManager():
         tools = [websearch, webscrape, datetime, csv, communicate]
         asyncio.create_task(self.worker())
         #asyncio.create_task(self.messanger())
-        await self.chat_manager.setup(tools = tools, prompt=description)
+        await self.chat_manager.setup(tools = tools, prompt=description, type="web")
 
 application = AgentManager()
 @ui.page("/")
