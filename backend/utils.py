@@ -1,3 +1,4 @@
+import asyncio
 from functools import wraps
 from copy import deepcopy
 import json
@@ -23,20 +24,37 @@ summary_pipeline = pipeline("summarization", model=SUMMARIZER_MODEL)
 
 
 def log_decorator(function):
-    @wraps(function)
-    def wrapper(*args, **kwargs):
-        state = kwargs.get("state") or getattr(st.session_state, "state", None)
-
-        if state is None:
-            state = StateManager.get_state()
-        try:
-            if hasattr(state, "logs") and state.logs is not None:
-                state.logs.append(f"[{function.__name__}] called")
-            return function(*args, **kwargs)
-        except Exception as e:
-            state.logs.append(f"[{function.__name__}] ERROR. {e}")
-            raise
-    return wrapper
+    if asyncio.iscoroutinefunction(function):
+        @wraps(function)
+        async def async_wrapper(*args, **kwargs):
+            state = kwargs.get("state") or getattr(
+                st.session_state, "state", None)
+            if state is None:
+                state = StateManager.get_state()
+            try:
+                if hasattr(state, "logs") and state.logs is not None:
+                    state.logs.append(f"[{function.__name__}] called")
+                result = await function(*args, **kwargs)
+                return result
+            except Exception as e:
+                state.logs.append(f"[{function.__name__}] ERROR. {e}")
+                raise
+        return async_wrapper
+    else:
+        @wraps(function)
+        def sync_wrapper(*args, **kwargs):
+            state = kwargs.get("state") or getattr(
+                st.session_state, "state", None)
+            if state is None:
+                state = StateManager.get_state()
+            try:
+                if hasattr(state, "logs") and state.logs is not None:
+                    state.logs.append(f"[{function.__name__}] called")
+                return function(*args, **kwargs)
+            except Exception as e:
+                state.logs.append(f"[{function.__name__}] ERROR. {e}")
+                raise
+        return sync_wrapper
 
 
 @log_decorator

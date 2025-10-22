@@ -16,19 +16,19 @@ PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
 @log_decorator
 def get_or_create_collection(state: GraphState):
-    pdf_name = state.qa_state.pdf_name
+    doc_name = state.qa_state.doc_name
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
 
     collection = chroma_client.get_or_create_collection(
-        name=pdf_name,
+        name=doc_name,
         metadata={
-            "description": f"pdf {pdf_name} chunks and chunk summary",
+            "description": f"pdf {doc_name} chunks and chunk summary",
             "created": str(datetime.now()),
             "distance_metric": "cosine"
         })
     state.logs.append(
-        f"[collection] {pdf_name} created or found")
+        f"[collection] {doc_name} created or found")
     return collection
 
 
@@ -73,9 +73,9 @@ def get_collection(collection_name: str):
 def insert_chunks(state: GraphState):
     collection = get_or_create_collection(state)
 
-    total_chunk = len(state.qa_state.chunked_pdf_text)
+    total_chunk = len(state.qa_state.chunked_doc_text)
 
-    for i, pdf_text in enumerate(state.qa_state.chunked_pdf_text, start=0):
+    for i, pdf_text in enumerate(state.qa_state.chunked_doc_text, start=0):
 
         if pdf_text.embedding is None:
             state.logs.append(f"Skipping chunk {i}: no embedding found.")
@@ -112,7 +112,7 @@ def insert_pdf_summary(state: GraphState) -> GraphState:
         metadata={
             "description": "user upload pdf file summary",
             "created": str(datetime.now()),
-            "pdf_name": PDF_SUMMARY_COLLECTION,
+            "doc_name": PDF_SUMMARY_COLLECTION,
             "distance_metric": "cosine"
         })
 
@@ -128,7 +128,7 @@ def insert_pdf_summary(state: GraphState) -> GraphState:
         ids=[chunk_id(state.summary_state.final_summary)],
         embeddings=summary_embedding.tolist(),
         documents=[state.summary_state.final_summary],
-        metadatas=[{"pdf_name": PDF_SUMMARY_COLLECTION}]
+        metadatas=[{"doc_name": PDF_SUMMARY_COLLECTION}]
     )
 
     state.logs.append(

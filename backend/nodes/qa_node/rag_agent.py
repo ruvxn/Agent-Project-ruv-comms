@@ -6,6 +6,7 @@ from ollama import chat
 from langchain_core.messages import AIMessage
 
 from backend.utils import get_user_input, log_decorator
+from constants import SYSTEM_MESSAGE_LIST
 load_dotenv()
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
@@ -14,7 +15,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 def rag_agent(state: GraphState) -> GraphState:
     user_input = get_user_input()
 
-    prompt = state.messages.system_message_list.top_k_kb_found_prompt.format(
+    prompt = SYSTEM_MESSAGE_LIST.top_k_kb_found_prompt.format(
         user_input=user_input,
         top_k_kb=state.qa_state.top_k_kb)
 

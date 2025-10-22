@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import numpy as np
 import streamlit
 from backend.model.states.graph_state.GraphState import GraphState
-from backend.model.states.qa_state.PdfTextClass import Meta, PdfTextClass
+from backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
 
 
 from backend.utils import get_embedding, log_decorator
@@ -38,18 +38,18 @@ def rag_retrieval_node(state: GraphState, collection, embeded_query) -> tuple[st
     return top_k_kb, top_score
 
 
-def top_k_result_to_log(state, query) -> List[PdfTextClass]:
-    top_k_result: List[PdfTextClass] = []
+def top_k_result_to_log(state, query) -> List[DocTextClass]:
+    top_k_result: List[DocTextClass] = []
     for doc_list, meta_list in zip(query.get('documents', []), query.get('metadatas', [])):
         for doc, meta in zip(doc_list, meta_list):
-            pdf_text_obj = PdfTextClass(
+            pdf_text_obj = DocTextClass(
                 chunk=doc,
                 meta=Meta(**meta)
             )
-            pdf_text_obj.meta.pdf_name = state.qa_state.pdf_name
+            pdf_text_obj.meta.doc_name = state.qa_state.doc_name
             top_k_result.append(pdf_text_obj)
             state.logs.append(
-                f"[TOP_{state.graph_config.TOP_K}_RESULT] pdf_name: {pdf_text_obj.meta.pdf_name}, "
+                f"[TOP_{state.graph_config.TOP_K}_RESULT] doc_name: {pdf_text_obj.meta.doc_name}, "
                 f"page_number: {pdf_text_obj.meta.page_number}, "
                 # f"chunk_summary: {pdf_text_obj.meta.chunk_summary}"
                 f"chunk_content: {pdf_text_obj.chunk}"

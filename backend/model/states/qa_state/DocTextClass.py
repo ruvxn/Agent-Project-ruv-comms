@@ -3,11 +3,11 @@ from pydantic import BaseModel, Field
 
 
 class Meta(BaseModel):
-    pdf_name: str = ""
+    doc_name: str = ""
     page_number: int = 0
 
 
-class PdfTextClass(BaseModel):
+class DocTextClass(BaseModel):
     meta: Meta = Meta()
     chunk: str = ""
     embedding: Optional[list[float]] = None

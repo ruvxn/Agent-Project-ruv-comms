@@ -14,7 +14,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 @log_decorator
 def get_summary_node(state: GraphState) -> GraphState:
     chunked_text_content = [
-        copy.deepcopy(chunk.chunk) for chunk in state.qa_state.chunked_pdf_text
+        copy.deepcopy(chunk.chunk) for chunk in state.qa_state.chunked_doc_text
     ]
 
     if not state.summary_state.chunk_summary or len(state.summary_state.chunk_summary) < len(chunked_text_content):

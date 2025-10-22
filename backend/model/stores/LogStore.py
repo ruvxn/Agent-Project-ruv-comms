@@ -14,9 +14,6 @@ class LogStore(BaseModel):
 
     def append(self, log: Any):
         self.logs.append(log)
-        if self.log_placeholder is not None and hasattr(self.log_placeholder, "container"):
-            from frontend.utils import render_log
-            render_log(self, self.log_placeholder)
 
     def extend(self, log_list: list[str]):
         for log in log_list:

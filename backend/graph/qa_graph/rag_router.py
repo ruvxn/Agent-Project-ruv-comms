@@ -30,7 +30,7 @@ def rag_router(state: GraphState) -> str:
         collection_names_search_list = state.collection_names_list
 
         if not state.graph_config.SEARCH_ALL_COLLECTION:
-            collection_names_search_list = [state.qa_state.pdf_name]
+            collection_names_search_list = [state.qa_state.doc_name]
 
         for collection_name in collection_names_search_list:
             collection = get_collection(collection_name)

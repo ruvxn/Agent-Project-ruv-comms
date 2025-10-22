@@ -1,8 +1,7 @@
-import streamlit as st
 from backend.model.states.StateManager import StateManager
-from frontend.home_ui import render_main_section, render_sidebar
+from frontend.home_ui import render_chat_section, render_file_uploader, render_sidebar
 from typing import Any
-
+from nicegui import ui
 from langgraph.checkpoint.serde import jsonplus
 from langgraph.checkpoint.serde.jsonplus import _msgpack_default
 from langgraph.checkpoint.serde.jsonplus import _option
@@ -39,18 +38,16 @@ def monkey_patch():
 
 def start():
     monkey_patch()
-    if "state" not in st.session_state:
-        st.session_state.state = StateManager.get_state()
+    state = StateManager.get_state()
 
-    if "message_placeholder" not in st.session_state:
-        st.session_state.message_placeholder = st.empty()
+    with ui.row().classes('w-full flex h-screen p-6 gap-6'):
 
-    state = st.session_state.state
+        with ui.column().classes(' flex-3 w-1/4 h-full overflow-y-auto border rounded-lg p-4 bg-gray-50 shadow-sm'):
+            render_sidebar()
 
-    render_sidebar(state)
-    new_state = render_main_section(state)
-
-    st.session_state.state = new_state
+        with ui.column().classes('flex-9  w-3/4 h-full overflow-y-auto border rounded-lg p-4 bg-gray-50 shadow-sm'):
+            render_chat_section()
 
 
 start()
+ui.run(title='Graph AI Chat', reload=True, port=8080)

@@ -2,7 +2,6 @@ from typing import Any, Optional, Union
 from types import SimpleNamespace
 from langchain_core.messages import HumanMessage, AIMessage
 from pydantic import BaseModel, Field
-from constants import SYSTEM_MESSAGE_LIST
 
 
 class MessageStore(BaseModel):
@@ -10,11 +9,8 @@ class MessageStore(BaseModel):
                    ] = Field(default_factory=list)
     user_query_list: list[HumanMessage] = Field(default_factory=list)
     ai_response_list: list[AIMessage] = Field(default_factory=list)
-    system_message_list: list[Any] = Field(
-        default_factory=lambda: SYSTEM_MESSAGE_LIST)
     message_history: list[Union[HumanMessage, AIMessage]
                           ] = Field(default_factory=list)
-    message_placeholder: Optional[Any] = None
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -26,9 +22,6 @@ class MessageStore(BaseModel):
 
         if save_to_history:
             self.message_history.append(message)
-            if hasattr(self.message_placeholder, "container"):
-                from frontend.utils import render_message
-                render_message(self, self.message_placeholder)
 
         if isinstance(message, HumanMessage):
             self.user_query_list.append(message)

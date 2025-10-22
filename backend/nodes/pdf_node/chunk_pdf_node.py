@@ -5,19 +5,19 @@ from backend.model.states.graph_state.GraphState import GraphState
 import fitz
 import os
 from dotenv import load_dotenv
-from backend.model.states.qa_state.PdfTextClass import Meta, PdfTextClass
+from backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
 from backend.utils import single_chunk_summary, get_chunk, clean_text, log_decorator
 
 load_dotenv()
 
-PDF_PATH = os.getenv("PDF_PATH")
-PDF_NAME = os.path.splitext(os.path.basename(PDF_PATH))[0]
+doc_path = os.getenv("DOC_PATH")
+doc_name = os.path.splitext(os.path.basename(doc_path))[0]
 
 
 @log_decorator
 def chunk_pdf_node(state: GraphState) -> dict:
-    pdf = fitz.open(state.qa_state.pdf_path)
-    pdf_text_list: list[PdfTextClass] = []
+    pdf = fitz.open(state.qa_state.doc_path)
+    pdf_text_list: list[DocTextClass] = []
     for page_num, page in enumerate(pdf, start=1):
         page_text = page.get_text().strip()
         if not page_text:
@@ -29,12 +29,12 @@ def chunk_pdf_node(state: GraphState) -> dict:
         )
         for single_chunk in chunk_page_text:
             meta = Meta(
-                pdf_name=PDF_NAME,
+                doc_name=doc_name,
                 page_number=page_num,
             )
             pdf_text_list.append(
-                PdfTextClass(chunk=single_chunk, meta=meta, embedding=[]))
+                DocTextClass(chunk=single_chunk, meta=meta, embedding=[]))
 
-    state.qa_state.chunked_pdf_text = pdf_text_list
-    state.qa_state.pdf_name = PDF_NAME
+    state.qa_state.chunked_doc_text = pdf_text_list
+    state.qa_state.doc_name = doc_name
     return state
