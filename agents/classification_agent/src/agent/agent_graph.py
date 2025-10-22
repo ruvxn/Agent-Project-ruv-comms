@@ -10,12 +10,8 @@ from agents.classification_agent.src.config import (
     AGENT_VERBOSE
 )
 from agents.classification_agent.src.agent.agent_state import ReviewAgentState
-from common.tools.date_time import DateTime
-"""
-from agents.classification_agent.src.agent.tools import (
-    get_current_datetime
-)
-"""
+from langgraph.prebuilt import ToolNode
+
 
 
 from agents.classification_agent.src.agent.prompts import get_system_prompt
@@ -55,8 +51,6 @@ class ReviewAgent:
 
         # Define available tools
         self.tools = tools
-        datetime_tool = DateTime()
-        self.tools.append(datetime_tool)
         # add memory components if enabled
         if self.enable_memory:
             try:
@@ -137,6 +131,7 @@ class ReviewAgent:
             "You are an expert planner for a review classification system. "
             "Create a concise, step-by-step plan to answer the user's request. "
             "Consider which tools to use and in what order. "
+            "If a message has come from another agent you must make sure that the contactotheragents tool is used to update the other agent"
             f"Available tools: {[tool.name for tool in self.tools]}\n"
         )
 
@@ -368,10 +363,11 @@ class ReviewAgent:
         # Create graph
         graph = StateGraph(ReviewAgentState)
 
+        tool_node = ToolNode(tools=self.tools)
         # Add nodes
         graph.add_node("planner", self.planner)
         graph.add_node("chat", self.chat)
-        graph.add_node("tools", self.tools_node)
+        graph.add_node("tools", tool_node)
 
         if self.enable_critique:
             graph.add_node("critique", self.critique)

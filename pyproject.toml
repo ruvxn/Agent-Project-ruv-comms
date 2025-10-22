@@ -19,6 +19,7 @@ dependencies = [
     "langmem>=0.0.29",
     "markdownify>=1.2.0",
     "nicegui>=3.0.4",
+    "notion-client>=2.5.0",
     "numpy>=2.3.2",
     "ollama>=0.6.0",
     "pandas>=2.3.3",

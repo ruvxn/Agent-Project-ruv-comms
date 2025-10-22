@@ -22,7 +22,7 @@ class CriticalityTool(BaseTool):
 
     # Pydantic fields - must be declared as class attributes
     claude_model: str = AGENT_MODEL  # use same claude model as agent
-    use_database: bool = False
+    use_database: bool = True
     batch_size: int = 50
     data_path: str = ""
     _cache: Dict[str, Any] = {}
