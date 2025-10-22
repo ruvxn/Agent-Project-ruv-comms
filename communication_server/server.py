@@ -32,7 +32,6 @@ class AgentServer:
         recipient_ws = self.agent_registry.get(recipient_id)
         if recipient_ws:
             try:
-                logging.info(f"Forwarding message", message_type, sender_id, recipient_id, message)
                 await recipient_ws.send(json.dumps({
                     "message_type": message_type,
                     "sender_id": sender_id,

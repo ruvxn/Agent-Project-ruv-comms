@@ -1,7 +1,9 @@
-import json
-from agents.directory_agent.tools.retrievagentinfo import ReteriveAgent
-from agents.directory_agent.tools.saveagentinfo import RegisterAgent
-from agents.directory_agent.tools.updateagentinfo import UpdateAgentStatus
+from agents.classification_agent.src.agent.tools import (
+    classify_review_criticality,
+    analyze_review_sentiment,
+    log_reviews_to_notion,
+    get_current_datetime
+)
 from common.tools.communicate import create_comm_tool
 import asyncio
 import logging
@@ -21,7 +23,11 @@ class AgentManager():
         self.task_queue = asyncio.Queue()
         self.connection_manager = ConnectionManager("ClassificationAgent",
                                                     "An agent that is able to classify things",
-                                                    [])
+                                                    [ "classify_review_criticality",
+                                                                "analyze_review_sentiment",
+                                                                "log_reviews_to_notion",
+                                                               "get_current_datetime"]
+                                                    )
 
     async def worker(self):
         logging.info("Starting worker thread")
@@ -30,7 +36,9 @@ class AgentManager():
             logging.info(f"Worker thread picked up {task_data}")
             message = ""
             if task_data["message_type"] == "message":
+
                 message = f"You have a new message from: {task_data['sender_id']}\n+ Message:{task_data['message']}"
+                logging.info(message)
             else:
                 message = f"You have a new message from: {task_data['sender_id']}\n+ Message:{task_data['message']}"
                 logging.info(f"Unknown message type: {task_data['message_type']}")
@@ -49,7 +57,13 @@ class AgentManager():
         await self.connection_manager.start_listening(message_handler=self.message_handler)
         communicate = create_comm_tool("ClassificationAgent", self.connection_manager)
         # memory = MemoryTool()  # must have qdrant running to use this otherwise it will break the code
-        tools = [communicate]
+        tools = [
+                communicate,
+                classify_review_criticality,
+                analyze_review_sentiment,
+                log_reviews_to_notion,
+                get_current_datetime
+        ]
 
         await self.chat_manager.setup(tools=tools, prompt="", type="classify")
         asyncio.create_task(self.worker())

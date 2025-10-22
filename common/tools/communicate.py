@@ -33,7 +33,6 @@ class Communicate(BaseTool):
                     'recipient_id': recipient_id,
                     'sender_id': self.sender_id,
                     'message': message
-
                     }
 
         try:

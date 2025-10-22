@@ -21,6 +21,7 @@ dependencies = [
     { name = "langmem" },
     { name = "markdownify" },
     { name = "nicegui" },
+    { name = "notion-client" },
     { name = "numpy" },
     { name = "ollama" },
     { name = "pandas" },
@@ -53,6 +54,7 @@ requires-dist = [
     { name = "langmem", specifier = ">=0.0.29" },
     { name = "markdownify", specifier = ">=1.2.0" },
     { name = "nicegui", specifier = ">=3.0.4" },
+    { name = "notion-client", specifier = ">=2.5.0" },
     { name = "numpy", specifier = ">=2.3.2" },
     { name = "ollama", specifier = ">=0.6.0" },
     { name = "pandas", specifier = ">=2.3.3" },
@@ -2099,6 +2101,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ed/23/86a51147161d30471fcac0eec6fe4f5393c285770ee2c118805ffaf1702f/nicegui-3.0.4.tar.gz", hash = "sha256:d00fefae2f28020d3fd09ddd03a09e8255f31eec03239cdb4575cde98be8a477", size = 20103535, upload-time = "2025-10-10T12:35:07.191Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/6b/c04876a7bdf6172e6310766096fdabc032a03c0fd3c3ce32be023c389fff/nicegui-3.0.4-py3-none-any.whl", hash = "sha256:c6901815f2d670dded8303bf93d15dcd3078ddf66e983ae0899074e5ba02899a", size = 20751601, upload-time = "2025-10-10T12:35:04.189Z" },
+]
+
+[[package]]
+name = "notion-client"
+version = "2.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b6/8c/b2f11904e1ef7a33338d3890fc50d30ffa2d0fca51b01b0a827d909b615a/notion_client-2.5.0.tar.gz", hash = "sha256:a03a0cc0502292193527af07a3bd13e40eb2b1083b60dcc7d733baad2d2729fd", size = 20865, upload-time = "2025-08-26T10:40:05.041Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cd/52/6b2a3081e1cb1123b1b28d5b1ebe88cb9e19b72264552dc707c1b265a1a7/notion_client-2.5.0-py2.py3-none-any.whl", hash = "sha256:d2efde1def1e7a3cc68cf4d2cab715571c71767852b26bf04474e9945d4a5903", size = 14348, upload-time = "2025-08-26T10:40:03.806Z" },
 ]
 
 [[package]]
