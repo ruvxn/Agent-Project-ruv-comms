@@ -5,5 +5,5 @@ from backend.model.states.tool_state.ToolReturnClass import ToolReturnClass
 
 class BaseTool(ABC):
     @abstractmethod
-    def invoke(self, args: dict) -> ToolReturnClass:
+    def ainvoke(self, args: dict) -> ToolReturnClass:
         pass

@@ -5,8 +5,6 @@ import numpy as np
 import streamlit
 from backend.model.states.graph_state.GraphState import GraphState
 from backend.model.states.qa_state.DocTextClass import Meta, DocTextClass
-
-
 from backend.utils import get_embedding, log_decorator
 
 load_dotenv()
@@ -50,7 +48,7 @@ def top_k_result_to_log(state, query) -> List[DocTextClass]:
             top_k_result.append(pdf_text_obj)
             state.logs.append(
                 f"[TOP_{state.graph_config.TOP_K}_RESULT] doc_name: {pdf_text_obj.meta.doc_name}, "
-                f"page_number: {pdf_text_obj.meta.page_number}, "
+                f"page_number: {pdf_text_obj.meta.referenece_number}, "
                 # f"chunk_summary: {pdf_text_obj.meta.chunk_summary}"
                 f"chunk_content: {pdf_text_obj.chunk}"
             )

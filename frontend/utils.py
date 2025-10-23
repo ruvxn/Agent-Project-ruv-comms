@@ -1,24 +1,29 @@
 from __future__ import annotations
-import streamlit as st
+from nicegui import ui
 from langchain_core.messages import HumanMessage, AIMessage
 
-
-def render_log(logStore, log_placeholder):
-    if hasattr(log_placeholder, "container"):
-        with log_placeholder.container():
-            for log in reversed(logStore.logs):
-                st.write(log)
-                st.write("**********")
+from backend.model.stores.LogStore import LogStore
 
 
-def render_message(messages, message_placeholder):
-    if hasattr(message_placeholder, "container"):
-        with message_placeholder.container():
-            for message in messages.message_history:
-                placeholder = st.empty()
-                if isinstance(message, HumanMessage):
-                    with placeholder.chat_message("user"):
-                        st.markdown(message.content)
-                elif isinstance(message, AIMessage):
-                    with placeholder.chat_message("assistant"):
-                        st.markdown(message.content)
+def render_log(log_store: LogStore, container: ui.Element):
+    if not log_store or not getattr(log_store, "logs", None):
+        with container:
+            ui.label("No logs yet.").classes('text-gray-500')
+        return
+
+    with container:
+        for log in log_store.logs[-20:]:
+            ui.label(f"• {log}").classes('text-sm text-gray-700')
+
+
+def render_message(messages, container: ui.Element):
+    if not messages or not getattr(messages, "message_history", None):
+        return
+
+    with container:
+        for message in messages.message_history:
+            if isinstance(message, HumanMessage):
+                ui.chat_message(message.content, name='User',
+                                sent=True).classes('w-full')
+            elif isinstance(message, AIMessage):
+                ui.chat_message(message.content, name='AI').classes('w-full')

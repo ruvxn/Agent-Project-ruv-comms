@@ -7,6 +7,7 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import pandas as pd
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from functools import wraps
@@ -107,7 +108,7 @@ def single_chunk_summary(single_chunk: str,  min_len: Optional[int] = None, max_
 
 @log_decorator
 def clean_text(text: str) -> str:
-    if not text:
+    if pd.isna(text):
         return ""
     text = text.replace("\xa0", " ").replace("\u200b", "")
     text = text.replace("\n", " ").replace("\t", " ")

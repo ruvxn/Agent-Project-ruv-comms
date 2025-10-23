@@ -88,4 +88,5 @@ SYSTEM_PROMPT_LIST = SimpleNamespace(
 
 # In residential care,how many resident deaths in 2022–23
 # how many First Nations people using home support were aged under 65
-# what is home care
+# tell me each error type in the document
+# does file mention billing error

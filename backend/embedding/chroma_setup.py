@@ -5,7 +5,9 @@ from dotenv import load_dotenv
 from chromadb import PersistentClient
 from sentence_transformers import SentenceTransformer
 import streamlit
+from backend.model.states.StateManager import StateManager
 from backend.model.states.graph_state.GraphState import GraphState
+from backend.model.states.qa_state.DocTextClass import Meta
 from backend.utils import get_embedding, log_decorator
 
 load_dotenv()
@@ -15,7 +17,9 @@ PDF_SUMMARY_COLLECTION = os.getenv("PDF_SUMMARY_COLLECTION")
 
 
 @log_decorator
-def get_or_create_collection(state: GraphState):
+def get_or_create_doc_collection():
+    state = StateManager.get_state()
+
     doc_name = state.qa_state.doc_name
 
     chroma_client = PersistentClient(path=CHROMA_PATH)
@@ -70,33 +74,33 @@ def get_collection(collection_name: str):
 
 
 @log_decorator
-def insert_chunks(state: GraphState):
-    collection = get_or_create_collection(state)
+def insert_data_row(data: str, embedding: list[float], metadata: Meta):
+    collection = get_or_create_doc_collection()
 
-    total_chunk = len(state.qa_state.chunked_doc_text)
+    # total_chunk = len(state.qa_state.chunked_doc_text)
 
-    for i, pdf_text in enumerate(state.qa_state.chunked_doc_text, start=0):
+    # for i, pdf_text in enumerate(state.qa_state.chunked_doc_text, start=0):
 
-        if pdf_text.embedding is None:
-            state.logs.append(f"Skipping chunk {i}: no embedding found.")
-            continue
+    #     if pdf_text.embedding is None:
+    #         state.logs.append(f"Skipping chunk {i}: no embedding found.")
+    #         continue
 
-        exist_chunk = collection.get(ids=[chunk_id(pdf_text.chunk)])
-        if exist_chunk["documents"]:
-            state.logs.append(f"Skipping chunk {i}: chunk already embedded.")
-            continue
+    #     exist_chunk = collection.get(ids=[chunk_id(pdf_text.chunk)])
+    #     if exist_chunk["documents"]:
+    #         state.logs.append(f"Skipping chunk {i}: chunk already embedded.")
+    #         continue
 
-        collection.add(
-            ids=[chunk_id(pdf_text.chunk)],
-            embeddings=[pdf_text.embedding],
-            documents=[pdf_text.chunk],
-            metadatas=[pdf_text.meta.__dict__]
-        )
+    collection.add(
+        ids=[chunk_id(data)],
+        embeddings=embedding,
+        documents=[data],
+        metadatas=[metadata]
+    )
 
-        pdf_text.embedding = None
+    # pdf_text.embedding = None
 
-        state.logs.append(
-            f"Inserted {i+1}/{total_chunk} chunk into Chroma.")
+    #     state.logs.append(
+    #         f"Inserted {i+1}/{total_chunk} chunk into Chroma.")
 
 
 @log_decorator

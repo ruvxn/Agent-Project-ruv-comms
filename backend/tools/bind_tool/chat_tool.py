@@ -17,7 +17,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 class chat_tool(BaseTool):
     """Respond to user queries"""
 
-    def invoke(self, args: dict) -> ToolReturnClass:
+    async def ainvoke(self, args: dict) -> ToolReturnClass:
         state: GraphState = args["state"]
         user_input = get_user_input()
 

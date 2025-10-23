@@ -18,6 +18,9 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 class finalized_tool(BaseTool):
     """Respond to user queries"""
 
+    async def ainvoke(self, args: dict) -> ToolReturnClass:
+        return self.invoke(args)
+
     def invoke(self, args: dict) -> ToolReturnClass:
         state: GraphState = args["state"]
         user_input = get_user_input()

@@ -36,13 +36,13 @@ async def tool_agent_async(state: GraphState) -> GraphState:
 
     state.logs.append(f"{response}")
 
-    final_state = invoke_tool(response.message, bind_tools, state)
+    final_state = await invoke_tool(response.message, bind_tools, state)
     return final_state
 
 
 @log_decorator
-def tool_agent(state: GraphState) -> GraphState:
-    return asyncio.run(tool_agent_async(state))
+async def tool_agent(state: GraphState) -> GraphState:
+    return await tool_agent_async(state)
 
 
 @log_decorator
@@ -64,23 +64,24 @@ def get_bind_tools(state: GraphState) -> list:
 
 
 @log_decorator
-def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
+async def invoke_tool(message, bind_tools, state: GraphState) -> GraphState:
     tool_name_args = get_tool_name_list(message, state)
     new_state = state
 
     for tool_name, args in tool_name_args:
-        new_state = execute_tool(tool_name, args, bind_tools, new_state)
+        new_state = await execute_tool(tool_name, args, bind_tools, new_state)
 
-    finalized_result = finalized_tool().invoke({"state": new_state})
+    finalized_result = await finalized_tool().ainvoke({"state": new_state})
+
     final_state = command("chat_tool", finalized_result)
 
     return final_state
 
 
-def execute_tool(tool_name, args, bind_tools, state: GraphState) -> GraphState:
+async def execute_tool(tool_name, args, bind_tools, state: GraphState) -> GraphState:
     tool_to_invoke = next(
-        (t for t in bind_tools if t["name"] == tool_name), None
-    )
+        (t for t in bind_tools if t["name"] == tool_name), None)
+
     if tool_to_invoke is None:
         state.logs.append(f"[execute_tool] Tool {tool_name} not found")
         return state
@@ -97,7 +98,7 @@ def execute_tool(tool_name, args, bind_tools, state: GraphState) -> GraphState:
             nested_args["state"] = state
             state = execute_tool(nested_name, nested_args, bind_tools, state)
 
-    result = tool_to_invoke["invoke"].invoke(args)
+    result = await tool_to_invoke["invoke"].ainvoke(args)
     new_state = command(tool_name, result)
     state.logs.append(f"[execute_tool] Executing {tool_name}")
 

@@ -51,7 +51,7 @@ class GraphState(BaseModel):
     messages: Annotated[MessageStore, merge_messages] = Field(
         default_factory=MessageStore)
     logs: Annotated[LogStore, merge_logs] = Field(default_factory=LogStore)
-    # graph_config: ConfigState = Field(default_factory=ConfigState)
+    graph_config: ConfigState = Field(default_factory=ConfigState)
     collection_names_list: list[str] = Field(default_factory=list)
     tool_outputs: list[dict[str, Any]] = []
 
