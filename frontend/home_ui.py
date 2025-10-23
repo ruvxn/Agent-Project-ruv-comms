@@ -57,8 +57,6 @@ async def on_chat_submit(user_input, chat_area):
         ui.chat_message(text, name='User', sent=True)
         thinking = ui.chat_message('AI is thinking...', name='AI')
 
-    chat_area.scroll_to()
-
     compiled_graph = await get_graph(state)
     new_state = await compiled_graph.ainvoke(state, config={"thread_id": "123"})
 
