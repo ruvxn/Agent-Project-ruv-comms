@@ -1,4 +1,14 @@
 import json
+import sys
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 from agents.directory_agent.tools.retrievagentinfo import ReteriveAgent
 from agents.directory_agent.tools.saveagentinfo import RegisterAgent
 from agents.directory_agent.tools.updateagentinfo import UpdateAgentStatus

@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import List
-from agents.classification_agent.src.utils import RawReview
+from src.utils import RawReview
 
 #check schema for required columns
 REQUIRED = {"review_id","review","username","email","date","reviewer_name","rating"}

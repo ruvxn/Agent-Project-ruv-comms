@@ -1,10 +1,8 @@
 from langchain_core.messages import HumanMessage, AIMessage
 from common.agent.Agent import Agent
-from agents.classification_agent.src.agent.agent_graph import ReviewAgent
 import aiosqlite
 from typing import List, Any
 import logging
-from typing import Any, List
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')
 
@@ -23,6 +21,12 @@ class ChatManager:
             self.connection = await aiosqlite.connect(f'db/{self.name}.db')
             self.graph = await self.agent.graph_builder(self.connection)
         elif type == "classify":
+            # Import ReviewAgent only when needed to avoid circular imports
+            import sys
+            import os
+            sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+            from agents.classification_agent.src.agent.agent_graph import ReviewAgent
+
             self.agent = ReviewAgent(name=self.name, tools=tools)
             self.connection = await aiosqlite.connect(f'db/{self.name}.db')
             self.graph = await self.agent.build_graph(self.connection)

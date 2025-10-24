@@ -1,5 +1,5 @@
 from typing import List, Dict, Tuple
-from agents.classification_agent.src.utils import RawReview, DetectedError, EnrichedError, SentimentData, hash_error
+from src.utils import RawReview, DetectedError, EnrichedError, SentimentData, hash_error
 
 # removed import classify_criticality - now using llm generated severity directly
 

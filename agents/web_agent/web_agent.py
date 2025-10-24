@@ -1,9 +1,19 @@
-from common.ChatManager import ChatManager
 import websockets
 from nicegui import app, ui
 import asyncio
 import json
 import logging
+import sys
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from common.ChatManager import ChatManager
 from common.ConnectionManager import ConnectionManager
 from agents.web_agent.tools.webscrape import WebScrape
 from agents.web_agent.tools.websearch import WebSearch

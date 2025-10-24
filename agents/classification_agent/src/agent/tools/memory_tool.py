@@ -2,7 +2,7 @@ from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 from typing import Optional
 
-from agents.classification_agent.src.memory.qdrant_store import QdrantStore
+from src.memory.qdrant_store import QdrantStore
 
 
 class MemorySearchInput(BaseModel):

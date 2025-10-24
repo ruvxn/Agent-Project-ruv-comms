@@ -3,14 +3,14 @@ import hashlib
 from typing import List, Tuple
 from langgraph.graph import Graph
 
-from agents.classification_agent.src.config import DATA_PATH, OLLAMA_MODEL
-from agents.classification_agent.src.nodes.load_reviews import load_reviews
-from agents.classification_agent.src.database import load_unprocessed_reviews, mark_reviews_processed, get_processing_stats
-from agents.classification_agent.src.nodes.detect_errors import detect_errors_with_ollama
-from agents.classification_agent.src.nodes.normalize import normalize
-from agents.classification_agent.src.utils import RawReview, DetectedError, EnrichedError, SentimentData
-from agents.classification_agent.src.nodes.notion_logger import upsert_enriched_error
-from agents.classification_agent.src.nodes.sentiment_analysis import analyze_review_sentiment
+from src.config import DATA_PATH, OLLAMA_MODEL
+from src.nodes.load_reviews import load_reviews
+from src.database import load_unprocessed_reviews, mark_reviews_processed, get_processing_stats
+from src.nodes.detect_errors import detect_errors_with_ollama
+from src.nodes.normalize import normalize
+from src.utils import RawReview, DetectedError, EnrichedError, SentimentData
+from src.nodes.notion_logger import upsert_enriched_error
+from src.nodes.sentiment_analysis import analyze_review_sentiment
 
 
 def _sha12(text: str) -> str:

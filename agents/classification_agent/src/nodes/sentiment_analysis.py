@@ -9,7 +9,7 @@ import os
 from typing import List
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 
-from agents.classification_agent.src.utils import RawReview, SentimentData
+from src.utils import RawReview, SentimentData
 
 
 class SentimentAnalyzer:

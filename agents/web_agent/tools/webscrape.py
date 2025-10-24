@@ -2,7 +2,7 @@ from langchain_core.tools import BaseTool
 from selenium import webdriver
 from typing_extensions import override
 from markdownify import markdownify as md
-from readability import Document
+# from readability.readability import Document  # Only needed for selenium fallback
 import pymupdf
 import requests
 from bs4 import BeautifulSoup
@@ -65,6 +65,12 @@ class WebScrape(BaseTool):
                         )
                         """
                         html_content = driver.page_source
+                        # Import Document only when needed for selenium fallback
+                        try:
+                            from readability.readability import Document
+                        except ImportError:
+                            return "Readability library not properly installed. Cannot extract content from dynamic pages."
+
                         doc  = Document(html_content)
                         title = doc.title()
                         body = doc.summary()

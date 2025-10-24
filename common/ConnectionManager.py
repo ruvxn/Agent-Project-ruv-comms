@@ -15,6 +15,7 @@ class ConnectionManager:
         self.agent_id = agent_id
         self.description = description
         self.capabilities = capabilities
+        self.message_handler = None
 
     async def connect(self):
         try:
@@ -52,10 +53,17 @@ class ConnectionManager:
 
         await self._websocket.send(json.dumps(payload))
 
-    async def start_listening(self, message_handler):
+    def set_message_handler(self, message_handler):
+        """Set the message handler callback"""
+        self.message_handler = message_handler
+
+    async def start_listening(self, message_handler=None):
         if not self._websocket:
             raise ConnectionError("Websocket not connected")
-        self.task = asyncio.create_task(self.receive(message_handler))
+        handler = message_handler or self.message_handler
+        if not handler:
+            raise ValueError("No message handler provided")
+        self.task = asyncio.create_task(self.receive(handler))
 
     async def receive(self, message_handler):
         while True:

@@ -1,29 +1,39 @@
 from typing import Literal
-from langchain.chat_models import init_chat_model
+from langchain_anthropic import ChatAnthropic
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver    # type: ignore 
 from langchain_core.messages import ToolMessage                  # type: ignore
 import aiosqlite                                                     # type: ignore
-from typing import List, Any
-from agents.classification_agent.src.config import (
+
+from src.config import (
+    ANTHROPIC_API_KEY,
+    AGENT_MODEL,
+    AGENT_TEMPERATURE,
     AGENT_CHECKPOINT_DB,
     AGENT_VERBOSE
 )
-from agents.classification_agent.src.agent.agent_state import ReviewAgentState
-from langgraph.prebuilt import ToolNode
+from src.agent.agent_state import ReviewAgentState
+from src.agent.prompts import get_system_prompt
+from src.agent.tools import (
+    classify_review_criticality,
+    analyze_review_sentiment,
+    log_reviews_to_notion,
+    get_current_datetime
+)
+from src.agent.tools.memory_tool import memory_search_tool
+from src.memory.qdrant_store import QdrantStore
+from src.memory.memory_manager import ClaudeMemoryManager
 
-
-
-from agents.classification_agent.src.agent.prompts import get_system_prompt
-from agents.classification_agent.src.agent.tools.memory_tool import memory_search_tool
-from agents.classification_agent.src.memory.qdrant_store import QdrantStore
-from agents.classification_agent.src.memory.memory_manager import ClaudeMemoryManager
+# Import communication tool (will be created dynamically when needed)
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
 
 
 class ReviewAgent:
     """A Review Classification Agent class for analyzing customer reviews"""
 
-    def __init__(self, name: str = "ReviewAgent", description: str = None, enable_critique: bool = False, enable_memory: bool = False, tools: List[Any] | None = None):
+    def __init__(self, name: str = "ReviewAgent", description: str = None, enable_critique: bool = False, enable_memory: bool = False, connection_manager=None):
         """
         Initialize the Review Classification Agent
 
@@ -32,25 +42,36 @@ class ReviewAgent:
             description: Custom description (defaults to system prompt)
             enable_critique: Whether to enable the critique/self-review loop
             enable_memory: Whether to enable long term memory (needs qdrant running)
+            connection_manager: ConnectionManager for inter-agent communication (optional)
         """
         self.name = name
         self.description = description or get_system_prompt()
         self.enable_critique = enable_critique
         self.enable_memory = enable_memory
-        self.llm = init_chat_model("gpt-4o-mini")
+
         # Initialize Claude LLM
-        """
-        I don't have access to this
         self.llm = ChatAnthropic(
             model=AGENT_MODEL,
             anthropic_api_key=ANTHROPIC_API_KEY,
             temperature=AGENT_TEMPERATURE,
         )
-        """
-
 
         # Define available tools
-        self.tools = tools
+        self.tools = [
+            classify_review_criticality,
+            analyze_review_sentiment,
+            log_reviews_to_notion,
+            get_current_datetime
+        ]
+
+        # Add communication tool if connection manager is provided
+        if connection_manager:
+            from common.tools.communicate import create_comm_tool
+            comm_tool = create_comm_tool(name, connection_manager)
+            self.tools.append(comm_tool)
+            if AGENT_VERBOSE:
+                print(f"[{self.name}] Communication tool enabled")
+
         # add memory components if enabled
         if self.enable_memory:
             try:
@@ -131,7 +152,6 @@ class ReviewAgent:
             "You are an expert planner for a review classification system. "
             "Create a concise, step-by-step plan to answer the user's request. "
             "Consider which tools to use and in what order. "
-            "If a message has come from another agent you must make sure that the contactotheragents tool is used to update the other agent"
             f"Available tools: {[tool.name for tool in self.tools]}\n"
         )
 
@@ -330,16 +350,33 @@ class ReviewAgent:
         try:
             extracted = self.memory_manager.extract(state["messages"])
 
+            if AGENT_VERBOSE:
+                print(f"[{self.name}] Extracted {len(extracted)} memories from conversation")
+                for i, mem in enumerate(extracted, 1):
+                    mem_type = type(mem).__name__
+                    if mem_type == "Episode":
+                        print(f"  {i}. Episode: {mem.observation[:80]}...")
+                    else:
+                        print(f"  {i}. Semantic: {mem.subject} -> {mem.predicate} -> {mem.object}")
+
             stored_count = 0
+            skipped_count = 0
             for memory in extracted:
                 try:
-                    self.memory_store.put(memory, check_duplicates=True)
-                    stored_count += 1
-                except:
-                    pass
+                    mem_id = self.memory_store.put(memory, check_duplicates=True)
+                    # Check if it was actually stored or was a duplicate
+                    if mem_id:
+                        stored_count += 1
+                except Exception as e:
+                    if AGENT_VERBOSE:
+                        print(f"  Error storing memory: {e}")
+                    skipped_count += 1
 
-            if AGENT_VERBOSE and stored_count > 0:
-                print(f"[{self.name}] Stored {stored_count} new memories")
+            if AGENT_VERBOSE:
+                if stored_count > 0:
+                    print(f"[{self.name}] Stored {stored_count} new memories")
+                if skipped_count > 0:
+                    print(f"[{self.name}] Skipped {skipped_count} memories (duplicates or errors)")
 
         except Exception as e:
             if AGENT_VERBOSE:
@@ -363,11 +400,10 @@ class ReviewAgent:
         # Create graph
         graph = StateGraph(ReviewAgentState)
 
-        tool_node = ToolNode(tools=self.tools)
         # Add nodes
         graph.add_node("planner", self.planner)
         graph.add_node("chat", self.chat)
-        graph.add_node("tools", tool_node)
+        graph.add_node("tools", self.tools_node)
 
         if self.enable_critique:
             graph.add_node("critique", self.critique)
@@ -429,13 +465,14 @@ class ReviewAgent:
 
 
 # Convenience function for backward compatibility
-async def create_agent_app(enable_critique: bool = False, enable_memory: bool = False):
+async def create_agent_app(enable_critique: bool = False, enable_memory: bool = False, connection_manager=None):
     """
     Create and compile the review classification agent
 
     Args:
         enable_critique: Whether to enable the critique/self-review loop
         enable_memory: Whether to enable long term memory (needs qdrant)
+        connection_manager: ConnectionManager for inter-agent communication (optional)
 
     Returns:
         Compiled agent graph ready for execution
@@ -445,10 +482,11 @@ async def create_agent_app(enable_critique: bool = False, enable_memory: bool = 
 
     #create agent instance
     agent = ReviewAgent(
-        name="ReviewClassificationAgent",
+        name="ClassificationAgent",
         description=get_system_prompt(),
         enable_critique=enable_critique,
-        enable_memory=enable_memory
+        enable_memory=enable_memory,
+        connection_manager=connection_manager
     )
 
 
@@ -470,7 +508,7 @@ async def build_agent_graph() -> StateGraph:
     Legacy function - builds agent graph without compilation
     Kept for backward compatibility
     """
-    from agents.classification_agent.src.agent.agent_state import ReviewAgentState
+    from src.agent.agent_state import ReviewAgentState
 
     graph = StateGraph(ReviewAgentState)
 

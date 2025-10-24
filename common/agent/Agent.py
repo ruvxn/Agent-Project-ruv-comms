@@ -1,7 +1,7 @@
 from langmem import create_memory_manager
 from .AgentState import State
 from langgraph.graph import StateGraph, START, END
-from langchain.chat_models import init_chat_model
+from langchain_anthropic import ChatAnthropic
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.prebuilt import ToolNode
 from typing_extensions import List, Any
@@ -9,6 +9,7 @@ from common.memory.semantic import Semantic
 from common.memory.episodic import Episode
 from common.stores.QdrantStore import QdrantStore
 import sqlite3
+import os
 
 class Agent:
     """An Agent class"""
@@ -16,16 +17,26 @@ class Agent:
         """init method for class Agent requires tools as a list of tools"""
         self.name = name
         self.prompt= prompt
-        self.llm = init_chat_model("ollama:qwen3:8b") #updated this for ollama as "ollama:model_name"
-        self.llm_openai = init_chat_model("gpt-4o-mini")
+
+        # Use Anthropic Claude instead of OpenAI
+        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not anthropic_api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable not set")
+
+        self.llm = ChatAnthropic(
+            model="claude-3-5-sonnet-20241022",
+            anthropic_api_key=anthropic_api_key,
+            temperature=0.7
+        )
         self.tools = tools
-        self.llm_with_tools  = self.llm.bind_tools(self.tools)
-        self.llm_openai_tools = self.llm_openai.bind_tools(self.tools)
-        self.manager =  create_memory_manager(
-                "gpt-4o-mini",
-                schemas=[Episode, Semantic],
-                instructions="Extract all user information and events as Episodes, and any facts as Semantic",
-            )
+        self.llm_with_tools = self.llm.bind_tools(self.tools)
+
+        # Use Anthropic for memory manager too
+        self.manager = create_memory_manager(
+            "claude-3-5-sonnet-20241022",
+            schemas=[Episode, Semantic],
+            instructions="Extract all user information and events as Episodes, and any facts as Semantic",
+        )
         #self.store = QdrantStore(collection_name="WebAgent") #don't uncomment if you don't have qdrant running
 
     def planner(self, state: State):
@@ -38,7 +49,7 @@ class Agent:
                 f"These are the tools available for use {self.tools}"
             )
         ]
-        plan = self.llm_openai_tools.invoke(planner_messages).content
+        plan = self.llm_with_tools.invoke(planner_messages).content
 
         state["plan"] = plan
 
@@ -51,7 +62,7 @@ class Agent:
         if state.get('critique') and state['critique'] != 'None':
             system_prompt += f"you must revise your previous answer based on the following critique: {state['critique']}"
         messages_with_prompt = [("system", system_prompt)] + state["messages"]
-        ai_response = self.llm_openai_tools.invoke(messages_with_prompt)
+        ai_response = self.llm_with_tools.invoke(messages_with_prompt)
         return {"messages":[ai_response]}
 
 

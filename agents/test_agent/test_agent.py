@@ -1,10 +1,20 @@
 import websockets
-from common.tools.databse import DatabaseTool
-from common.tools.communicate import create_comm_tool
-from common.ConnectionManager import ConnectionManager
 import asyncio
 import json
 import logging
+import sys
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from common.tools.databse import DatabaseTool
+from common.tools.communicate import create_comm_tool
+from common.ConnectionManager import ConnectionManager
 from common.ChatManager import ChatManager
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(levelname)s %(message)s')

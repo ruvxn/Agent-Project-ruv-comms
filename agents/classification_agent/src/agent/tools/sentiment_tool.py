@@ -8,9 +8,9 @@ import json
 from typing import Optional, List, Any, Dict
 from langchain_core.tools import BaseTool
 
-from agents.classification_agent.src.utils import RawReview
-from agents.classification_agent.src.nodes.sentiment_analysis import analyze_review_sentiment as analyze_sentiment_node
-from agents.classification_agent.src.database import load_unprocessed_reviews
+from src.utils import RawReview
+from src.nodes.sentiment_analysis import analyze_review_sentiment as analyze_sentiment_node
+from src.database import load_unprocessed_reviews
 
 
 class SentimentTool(BaseTool):
@@ -51,7 +51,7 @@ class SentimentTool(BaseTool):
             use_database = os.getenv("USE_DATABASE", "false").lower() == "true"
 
         if data_path is None:
-            from agents.classification_agent.src.config import DATA_PATH
+            from src.config import DATA_PATH
             data_path = DATA_PATH
 
         super().__init__(
@@ -76,7 +76,7 @@ class SentimentTool(BaseTool):
         if not review_ids:
             return []
 
-        from agents.classification_agent.src.database import get_connection
+        from src.database import get_connection
 
         conn = get_connection()
         cursor = conn.cursor()
@@ -128,7 +128,7 @@ class SentimentTool(BaseTool):
             return load_unprocessed_reviews(batch_size=limit)
         else:
             # Fallback to CSV
-            from agents.classification_agent.src.nodes.load_reviews import load_reviews
+            from src.nodes.load_reviews import load_reviews
             all_reviews = load_reviews(self.data_path)
             return all_reviews[:limit]
 
