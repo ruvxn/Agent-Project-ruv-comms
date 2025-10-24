@@ -7,4 +7,5 @@ retriever_tool = create_retriever_tool(
     retriver,
     name="KnowledgeBaseRetriever",
     description="A tool to retrieve information from the knowledge base to answer questions related to the ingested documents."
+
 )
