@@ -17,7 +17,15 @@ __pycache__/
 .vscode/
 .idea/
 
+# Vector database storage
 chroma_db/
+memory_storage/
+*.sqlite3
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
 
 test.ft.txt
 
